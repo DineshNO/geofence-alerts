@@ -13,6 +13,14 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$ROOT/deploy/bundle"
 BASE_IMAGES="postgres:16.16-alpine nginxinc/nginx-unprivileged:1.31.7-alpine3.24"
 
+# The deploy files of a released version are taken from its tag. The newest version's tag must therefore be at
+# the commit being built, or the bundle would carry the files of an older commit (and not match its images).
+for version in "$@"; do latest="$version"; done
+if git -C "$ROOT" rev-parse -q --verify "refs/tags/v$latest" >/dev/null; then
+  [ "$(git -C "$ROOT" rev-parse "v$latest^{commit}")" = "$(git -C "$ROOT" rev-parse HEAD)" ] \
+    || { echo "tag v$latest is not at HEAD: move it (git tag -f v$latest) before building the bundle" >&2; exit 1; }
+fi
+
 rm -rf "$OUT" && mkdir -p "$OUT"
 
 # an image may be present for another platform too (an Apple Silicon laptop): ask for linux/amd64
