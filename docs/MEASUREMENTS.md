@@ -55,11 +55,46 @@ is a GiST index on the position and a smaller default page.
 - Alerts by zone: Z-01 32, Z-02 32, Z-03 30, Z-04 45, Z-05 45, Z-06 30, Z-07 30, Z-08 4,
   Z-11 3, Z-12 2. No alerts for the advisory zones Z-09 and Z-10.
 
-## Not measured yet
+## Console under a 5x replay (production build, real browser)
 
-- Browser long-task profile of the console under a 5x replay.
-- Automated accessibility scan (axe is not installed). Keyboard behaviour and roles are
-  covered by the component tests.
+The production build of the console (`vite preview`), a backend on an empty database, and `replay.py --speed 5` for the
+whole feed (225,748 lines in 150 s, about 1,500 lines/s, 253 alerts raised) while 3,000 assets were on the map. A
+`PerformanceObserver` for `longtask` entries recorded the main thread for the whole run (it was checked first: a task
+of 120 ms started from a timer is recorded). During the run the map was zoomed and panned repeatedly.
+
+- Long tasks (over 50 ms): **0**. The brief's limit is 200 ms.
+- The map showed 3,000 assets and the alert panel 253 active alerts at the end, with live updates on.
+
+Limits: a 1024 x 768 browser pane on a laptop, not the interview machine; the interaction was scripted (about 20 zoom and
+pan gestures), not a person; no frame-rate measurement was taken.
+
+## Accessibility checks
+
+- **axe-core 4.10.2**, rules for WCAG 2.0 and 2.1 level A and AA, run in the browser on: the sign-in screen (11 rules
+  passed), the signed-in console after the replay (26 passed), the console with a zone's asset list open (26 passed) and with
+  the asset detail open (28 passed). **0 violations, 0 items needing review** in all four.
+- **Keyboard:** Tab order from the page start: skip link ("Skip to the alerts"), Sign out, the map, Zoom in, Zoom out,
+  the Active and Resolved tabs, then the alert list. Every stop has a visible focus indicator: a 3 px outline, and a blue
+  2 px ring on the two map zoom buttons (`:focus-visible` confirmed). Choosing a zone's count moves focus to the list heading.
+- **Non-map view of zones:** the zones table with counts, and the list of assets inside a zone, both with real tables and buttons.
+
+Not done: a check with a screen reader (the announcements for new alerts are covered by the component tests: one polite
+announcement at most every 4 seconds), and a manual check of colour contrast beyond what axe reports.
+
+## Connection loss and recovery (the brief: a 30-second loss)
+
+The backend was stopped for about 75 seconds while the console was open, then started again, and a report that opens a
+new alert was delivered.
+
+- During the loss the panels showed "The alerts could not be loaded" and "The positions could not be loaded".
+- The connection badge changed to "Live updates were interrupted. Reconnecting." about 50 seconds after the stop. The delay is
+  the console's 45-second silence watchdog: the development proxy used here (`vite preview`) does not close the stream when
+  the backend dies. Behind nginx, a stopped backend closes the stream and the badge should change at once; that was not
+  measured.
+- After the backend returned, within about 9 seconds the badge read "Live updates are back.", the alert count had risen from 253
+  to 254 (the alert opened during the loss) and the map showed 3,000 assets again. The page was not reloaded (state of the
+  page from before the loss was still there).
+- Reloading the page while signed in keeps the session (sessionStorage, until the 30-minute token expires).
 
 ## Rolling upgrade 1.0.0 to 1.1.0 (`deploy/scripts/test-rolling-upgrade.sh`)
 
