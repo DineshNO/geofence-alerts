@@ -52,7 +52,14 @@ with gzip.open(feed_file, "rt") as f:
     lines = [next(f).rstrip("\n") for _ in range(20000)]
 feed_token = login(feed_user, feed_pass)
 read_token = login(reader_user, reader_pass)
-assets = sorted({json.loads(l)["assetId"] for l in lines if l.startswith("{") and '"assetId"' in l and l.endswith("}")})[:50]
+def asset_of(line):
+    try:
+        return json.loads(line).get("assetId")
+    except ValueError:
+        return None  # the feed has damaged lines on purpose
+
+
+assets = sorted({a for a in map(asset_of, lines) if isinstance(a, str) and a.startswith("AST-")})[:50]
 
 
 def stopped():
