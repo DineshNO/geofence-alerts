@@ -1,6 +1,7 @@
 package com.example.geoalert.ingest.application;
 
 import com.example.geoalert.alerts.application.AlertOpening;
+import com.example.geoalert.common.jdbc.DatabaseErrors;
 import com.example.geoalert.ingest.domain.BatchLog;
 import com.example.geoalert.ingest.domain.LineOutcome;
 import com.example.geoalert.ingest.domain.LineValidator;
@@ -8,11 +9,13 @@ import com.example.geoalert.ingest.domain.ParsedReport;
 import com.example.geoalert.ingest.domain.RejectedLine;
 import com.example.geoalert.ingest.domain.RejectedLineStore;
 import com.example.geoalert.ingest.domain.ReportStore;
+import com.example.geoalert.metrics.Metrics;
 import com.example.geoalert.positions.application.PositionService;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,8 +23,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Takes in one batch. Every line is judged on its own before any database work (a bad line
- * can never affect a good one, R6); the valid lines are then written in one transaction.
+ * Takes in one batch.
+ *
+ * <p>Every line is judged on its own before any database work, so a bad line can never affect a
+ * good one (R6): rejected lines are collected and the rest carry on. The valid lines are written
+ * in one transaction: all of the batch is stored, or none of it.
+ *
+ * <p>A database failure fails the whole batch (a 500, nothing stored). Only a failure that may
+ * pass (a deadlock, a lost connection) is retried, a few times with a growing delay; a schema or
+ * data error is never retried. Delivering the batch again is always safe (R1). Every batch that
+ * finally fails is raised as an operational alert: an ERROR log line and a counter.
  */
 @Service
 public class IngestService {
@@ -38,6 +49,8 @@ public class IngestService {
     private final RejectedLineStore rejectedLines;
     private final BatchLog batchLog;
     private final TransactionTemplate tx;
+    private final Metrics metrics;
+    private final IngestProperties properties;
     private final String instance;
 
     public IngestService(
@@ -47,6 +60,8 @@ public class IngestService {
             RejectedLineStore rejectedLines,
             BatchLog batchLog,
             TransactionTemplate tx,
+            Metrics metrics,
+            IngestProperties properties,
             @Value("${app.instance-name:backend}") String instance) {
         this.reports = reports;
         this.positions = positions;
@@ -54,6 +69,8 @@ public class IngestService {
         this.rejectedLines = rejectedLines;
         this.batchLog = batchLog;
         this.tx = tx;
+        this.metrics = metrics;
+        this.properties = properties;
         this.instance = instance;
     }
 
@@ -81,14 +98,75 @@ public class IngestService {
                                         lineNo, bad.code(), bad.detail(), storedText(lines.get(i))));
             }
         }
+
+        // 2. one transaction for the whole batch, tried again only when the failure may pass
+        int received = lines.size();
+        int validLines = received - rejected.size();
+        BatchResult result =
+                writeWithRetry(valid, rejected, received, validLines, requestId);
+
+        metrics.increment("ingest_batches_total");
+        metrics.increment("ingest_lines_received_total", result.received());
+        metrics.increment("ingest_lines_accepted_total", result.accepted());
+        metrics.increment("ingest_lines_duplicate_total", result.duplicates());
+        metrics.increment("ingest_lines_rejected_total", result.rejected());
+        metrics.increment("ingest_optional_values_replaced_total", replacedValues);
         if (replacedValues > 0) {
             log.info("Optional values replaced with NULL: {}", replacedValues);
         }
+        return result;
+    }
 
-        // 2. one transaction for the whole batch: all of it is stored, or none of it
-        int received = lines.size();
-        int validLines = received - rejected.size();
-        return tx.execute(status -> persist(valid, rejected, received, validLines, requestId));
+    private BatchResult writeWithRetry(
+            List<ParsedReport> valid,
+            List<RejectedLine> rejected,
+            int received,
+            int validLines,
+            String requestId) {
+        int maxAttempts = properties.retryAttempts();
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return tx.execute(
+                        status -> persist(valid, rejected, received, validLines, requestId));
+            } catch (RuntimeException failure) {
+                if (DatabaseErrors.isTransient(failure) && attempt < maxAttempts) {
+                    metrics.increment("ingest_transient_retries_total");
+                    pause(attempt);
+                    continue;
+                }
+                raiseFailedBatchAlert(failure, received, attempt, requestId);
+                throw failure;
+            }
+        }
+    }
+
+    /**
+     * The operational alert for a batch that failed for good: one ERROR line with everything
+     * needed to find it (the request id is in every log line of the request), and a counter.
+     */
+    private void raiseFailedBatchAlert(
+            RuntimeException failure, int lines, int attempts, String requestId) {
+        metrics.increment("ingest_batch_failures_total");
+        log.error(
+                "INGEST BATCH FAILED requestId={} sqlState={} lines={} attempts={} transient={}",
+                requestId,
+                DatabaseErrors.sqlState(failure),
+                lines,
+                attempts,
+                DatabaseErrors.isTransient(failure),
+                failure);
+    }
+
+    /** A short growing delay with some random variation, so retrying batches do not line up. */
+    private void pause(int attempt) {
+        long base = properties.retryBaseDelay().toMillis();
+        long delay = base * (1L << (attempt - 1));
+        long jitter = ThreadLocalRandom.current().nextLong(0, Math.max(1, delay / 2 + 1));
+        try {
+            Thread.sleep(delay + jitter);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private BatchResult persist(

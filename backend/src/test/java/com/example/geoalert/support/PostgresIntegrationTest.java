@@ -66,5 +66,6 @@ public abstract class PostgresIntegrationTest {
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("app.security.jwt-secret", () -> "test-only-signing-secret-0123456789abcdef");
         registry.add("app.users.file", () -> USERS_FILE.toString());
+        registry.add("app.ingest.retry-base-delay", () -> "1ms"); // keep retry tests quick
     }
 }

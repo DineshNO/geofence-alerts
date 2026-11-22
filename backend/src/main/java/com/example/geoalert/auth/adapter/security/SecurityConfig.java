@@ -48,6 +48,8 @@ class SecurityConfig {
                                         .hasRole("INGEST")
                                         .requestMatchers(HttpMethod.GET, "/api/v1/stats")
                                         .authenticated()
+                                        .requestMatchers(HttpMethod.GET, "/metrics")
+                                        .authenticated()
                                         .requestMatchers("/api/v1/**")
                                         .hasAnyRole("OPERATOR", "SUPERVISOR")
                                         .anyRequest()
