@@ -1,7 +1,6 @@
 # Runbook (v1)
 
-Everything here uses only docker, docker compose and curl-free shell inside the
-environment. Run commands from the `deploy/` folder of the unpacked bundle.
+Everything here uses only docker and docker compose, and the shell tools of the machine. Run commands from the `deploy/` folder of the unpacked bundle.
 
 ## Is it healthy?
 

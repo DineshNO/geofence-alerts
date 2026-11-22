@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -58,6 +59,14 @@ class Cr1SqlStepsTest extends PostgresIntegrationTest {
         try (var rs = s.executeQuery(sql)) {
             rs.next();
             return rs.getLong(1);
+        }
+    }
+
+    @AfterEach
+    void dropScratchSchema() throws SQLException {
+        try (Connection admin = DriverManager.getConnection(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                Statement s = admin.createStatement()) {
+            s.execute("DROP SCHEMA IF EXISTS cr1 CASCADE");
         }
     }
 

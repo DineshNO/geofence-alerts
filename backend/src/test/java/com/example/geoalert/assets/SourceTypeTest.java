@@ -52,7 +52,8 @@ class SourceTypeTest extends PostgresIntegrationTest {
         String nullable =
                 jdbc.queryForObject(
                         "SELECT is_nullable FROM information_schema.columns"
-                                + " WHERE table_name = 'reports' AND column_name = 'source_type'",
+                                + " WHERE table_schema = 'public' AND table_name = 'reports'"
+                                + " AND column_name = 'source_type'",
                         String.class);
         assertThat(nullable).isEqualTo("YES");
     }
