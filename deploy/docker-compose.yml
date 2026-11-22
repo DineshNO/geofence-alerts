@@ -1,0 +1,194 @@
+# The whole system: the database, two backend instances, the load balancer and the console.
+# One command starts it: docker compose up -d      (the console and the API are on port 8080)
+#
+# Nothing is built or pulled on the machine: the images are loaded from the bundle (pull_policy: never).
+# Image versions can be changed with --env-file (see env/). Nothing here is a secret: the database
+# password and the signing key are created on the first start, and the users file is yours.
+
+x-hardening: &hardening
+  platform: linux/amd64
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+
+x-backend: &backend
+  <<: *hardening
+  pull_policy: never
+  read_only: true
+  tmpfs: ["/tmp"]
+  mem_limit: 1280m
+  networks: [internal]
+  depends_on:
+    init: { condition: service_completed_successfully }
+    postgres: { condition: service_healthy }
+    migrate: { condition: service_completed_successfully }
+  volumes:
+    - generated:/gen:ro
+    - ./secrets/users.json:/run/users/users.json:ro
+  environment: &backend-env
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/geoalert
+    SPRING_DATASOURCE_USERNAME: geoalert
+    # the database password and the signing key are files in /gen, read as settings
+    SPRING_CONFIG_IMPORT: optional:configtree:/gen/
+    APP_USERS_FILE: /run/users/users.json
+    # the schema is changed by the migrate step, not when an instance starts
+    SPRING_LIQUIBASE_ENABLED: "false"
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+    interval: 5s
+    timeout: 3s
+    retries: 12
+    start_period: 20s
+
+services:
+  # Creates the database password and the signing key on the first start, and keeps them on later starts.
+  init:
+    image: postgres:16.16-alpine
+    pull_policy: never
+    platform: linux/amd64
+    user: "0:0"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+    networks: [internal]
+    volumes: ["generated:/gen"]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        if [ ! -s /gen/db_password ]; then
+          head -c 36 /dev/urandom | base64 | tr -d '/+=\n' > /gen/db_password
+        fi
+        if [ ! -s /gen/app.security.jwt-secret ]; then
+          head -c 48 /dev/urandom | base64 | tr -d '\n' > /gen/app.security.jwt-secret
+        fi
+        cp /gen/db_password /gen/spring.datasource.password
+        chmod 0444 /gen/db_password /gen/spring.datasource.password /gen/app.security.jwt-secret
+
+  postgres:
+    <<: *hardening
+    image: postgres:16.16-alpine
+    pull_policy: never
+    user: "70:70"
+    mem_limit: 2g
+    shm_size: 256m
+    networks: [internal]
+    depends_on:
+      init: { condition: service_completed_successfully }
+    environment:
+      POSTGRES_DB: geoalert
+      POSTGRES_USER: geoalert
+      POSTGRES_PASSWORD_FILE: /gen/db_password
+    command:
+      - postgres
+      - -c
+      - shared_buffers=768MB
+      - -c
+      - effective_cache_size=1536MB
+      - -c
+      - max_connections=100
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - checkpoint_timeout=15min
+      - -c
+      - wal_compression=on
+      - -c
+      - log_min_duration_statement=1000
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - generated:/gen:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geoalert -d geoalert"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: applies the database changesets and exits. Also the first step of every upgrade:
+  #   docker compose run --rm migrate
+  migrate:
+    <<: *hardening
+    image: ${MIGRATE_IMAGE:-geoalert/backend:1.0.0}
+    pull_policy: never
+    restart: "no"
+    read_only: true
+    tmpfs: ["/tmp"]
+    networks: [internal]
+    depends_on:
+      init: { condition: service_completed_successfully }
+      postgres: { condition: service_healthy }
+    volumes: ["generated:/gen:ro"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/geoalert
+      SPRING_DATASOURCE_USERNAME: geoalert
+      SPRING_DATASOURCE_PASSWORD_FILE: /gen/db_password
+    entrypoint:
+      - java
+      - -cp
+      - /app/app.jar
+      - -Dloader.main=com.example.geoalert.MigrateMain
+      - org.springframework.boot.loader.launch.PropertiesLauncher
+
+  backend-1:
+    <<: *backend
+    image: ${BACKEND_1_IMAGE:-geoalert/backend:1.0.0}
+    environment:
+      <<: *backend-env
+      APP_INSTANCE_NAME: backend-1
+
+  backend-2:
+    <<: *backend
+    image: ${BACKEND_2_IMAGE:-geoalert/backend:1.0.0}
+    environment:
+      <<: *backend-env
+      APP_INSTANCE_NAME: backend-2
+
+  console:
+    <<: *hardening
+    image: ${CONSOLE_IMAGE:-geoalert/console:1.0.0}
+    pull_policy: never
+    read_only: true
+    tmpfs: ["/tmp"]
+    mem_limit: 64m
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # The only service with a port on the host, and the only one that can reach outside (never used).
+  lb:
+    <<: *hardening
+    image: nginxinc/nginx-unprivileged:1.31.7-alpine3.24
+    pull_policy: never
+    read_only: true
+    tmpfs: ["/tmp"]
+    mem_limit: 128m
+    ports: ["${LB_PORT:-8080}:8080"]
+    networks: [internal, edge]
+    depends_on:
+      backend-1: { condition: service_healthy }
+      backend-2: { condition: service_healthy }
+      console: { condition: service_healthy }
+    volumes:
+      - ./nginx/lb.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/active:/etc/nginx/upstream:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/lb-health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  # no route to the outside: the database and the backends cannot call any other host
+  internal:
+    internal: true
+  edge: {}
+
+volumes:
+  pgdata: {}
+  generated: {}

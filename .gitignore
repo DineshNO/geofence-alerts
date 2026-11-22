@@ -1,7 +1,7 @@
 # secrets: users files, environment files, keys (never commit these)
 seed-users*.json
 users*.json
-!deploy/config/users.example.json
+!deploy/secrets/users.example.json
 .env
 .env.*
 *.pem

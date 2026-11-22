@@ -1,0 +1,5 @@
+# the build context holds only what the images copy
+*
+!backend/target/geofence-alerts-backend-*.jar
+!frontend/dist
+!frontend/nginx.conf
