@@ -60,3 +60,19 @@ is a GiST index on the position and a smaller default page.
 - Browser long-task profile of the console under a 5x replay.
 - Automated accessibility scan (axe is not installed). Keyboard behaviour and roles are
   covered by the component tests.
+
+## Rolling upgrade 1.0.0 to 1.1.0 (`deploy/scripts/test-rolling-upgrade.sh`)
+
+The whole feed (215,965 reports) loaded into 1.0.0, then the upgrade steps of INSTALL.md run one by one
+while two feeders (50-line batches) and four readers (viewport, track, alert list) ran continuously.
+
+- Requests during the whole upgrade: **3,803 sent, 0 failed.**
+- 1.0.0 delivering on the expanded schema: 3 of 3 batches answered HTTP 200; its rows had no type
+  until the backfill.
+- Backfill with traffic running: 4 s for 223,931 rows, including the catch-up run; `missing` 0 at the end.
+- After step 7: column NOT NULL, index valid, types SATELLITE 109,402 / GROUND 73,208 / MOBILE 33,141 /
+  UNKNOWN 217, 0 rows that disagree with the rule.
+
+Limits of this test: about 20 requests per second for about two minutes, not the real load; live alert
+streams were not part of the count (a stream on a replaced backend ends and the console reconnects, which
+the console tests cover); no negative control (a naive restart of both backends at once) was run.
