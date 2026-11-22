@@ -1,5 +1,6 @@
 package com.example.geoalert.ingest.application;
 
+import com.example.geoalert.alerts.application.AlertOpening;
 import com.example.geoalert.ingest.domain.BatchLog;
 import com.example.geoalert.ingest.domain.LineOutcome;
 import com.example.geoalert.ingest.domain.LineValidator;
@@ -33,6 +34,7 @@ public class IngestService {
     private final LineValidator validator = new LineValidator();
     private final ReportStore reports;
     private final PositionService positions;
+    private final AlertOpening alerts;
     private final RejectedLineStore rejectedLines;
     private final BatchLog batchLog;
     private final TransactionTemplate tx;
@@ -41,12 +43,14 @@ public class IngestService {
     public IngestService(
             ReportStore reports,
             PositionService positions,
+            AlertOpening alerts,
             RejectedLineStore rejectedLines,
             BatchLog batchLog,
             TransactionTemplate tx,
             @Value("${app.instance-name:backend}") String instance) {
         this.reports = reports;
         this.positions = positions;
+        this.alerts = alerts;
         this.rejectedLines = rejectedLines;
         this.batchLog = batchLog;
         this.tx = tx;
@@ -102,7 +106,7 @@ public class IngestService {
         // only reports that were really new move positions; a duplicate changes nothing (R1)
         List<ParsedReport> newReports =
                 valid.stream().filter(r -> storedIds.contains(r.reportId())).toList();
-        positions.apply(newReports);
+        alerts.open(positions.apply(newReports));
 
         if (!rejected.isEmpty()) {
             rejectedLines.saveAll(batchId, rejected);
