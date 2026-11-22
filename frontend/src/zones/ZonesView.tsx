@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { AssetPosition, Zone, ZoneOccupancy } from '../api/types';
 import { formatCoordinate, formatTime } from '../map/format';
 
@@ -26,6 +27,15 @@ export function ZonesView({
 }: Props) {
   const counts = new Map(occupancy.map((o) => [o.zoneId, o.assetCount]));
   const selected = zones.find((z) => z.zoneId === selectedZoneId);
+  const listHeading = useRef<HTMLHeadingElement>(null);
+
+  // The list opens below a long table, so bring it into view and move the keyboard focus to it.
+  useEffect(() => {
+    if (selectedZoneId) {
+      listHeading.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      listHeading.current?.focus({ preventScroll: true });
+    }
+  }, [selectedZoneId]);
 
   return (
     <section aria-labelledby="zones-heading" className="panel">
@@ -64,9 +74,14 @@ export function ZonesView({
 
       {selected && (
         <div aria-live="polite">
-          <h3>
-            Assets in {selected.zoneId} {selected.name}
-          </h3>
+          <div className="panel-head">
+            <h3 ref={listHeading} tabIndex={-1}>
+              Assets in {selected.zoneId} {selected.name}
+            </h3>
+            <button type="button" onClick={() => onSelectZone(null)}>
+              Close list
+            </button>
+          </div>
           {assetsLoading ? (
             <p>Loading…</p>
           ) : assets.length === 0 ? (
