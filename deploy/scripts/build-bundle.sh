@@ -32,8 +32,19 @@ for version in "$@"; do
   docker save --platform linux/amd64 $images | gzip -9 > "$OUT/geoalert-images-$version.tar.gz"
 
   echo "== deploy files $version"
-  tar -czf "$OUT/geoalert-deploy-$version.tar.gz" -C "$ROOT/deploy" \
-    docker-compose.yml nginx env sql secrets/README.txt secrets/users.example.json
+  # the files of a released version come from its git tag, so the archive of 1.0.0 is the 1.0.0 one
+  # even when it is built later; a version without a tag yet is taken from the working tree
+  SRC="$(mktemp -d)"
+  if git -C "$ROOT" rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+    git -C "$ROOT" archive "v$version" deploy | tar -x -C "$SRC"
+  else
+    mkdir "$SRC/deploy" && cp -R "$ROOT/deploy/." "$SRC/deploy/"
+  fi
+  FILES="docker-compose.yml nginx env secrets/README.txt secrets/users.example.json"
+  [ -d "$SRC/deploy/sql" ] && FILES="$FILES sql"
+  # shellcheck disable=SC2086
+  tar -czf "$OUT/geoalert-deploy-$version.tar.gz" -C "$SRC/deploy" $FILES
+  rm -rf "$SRC"
 done
 
 cp "$ROOT/INSTALL.md" "$OUT/INSTALL.md"
