@@ -235,8 +235,7 @@ hours of focused effort with AI assistance.
 |---|---|---|---|
 | Understanding and design | Saturday 21 November from 12:40, and Sunday until 16:20 | about 6 | reading the brief and the supplied data; learning the domain; deciding every material design point and recording the alternatives; the repository layout and the commit plan |
 | The planned commits | Sunday 22 November, 16:20 to 18:00 | about 1.5 | the 33 commits of the plan, from the first skeleton to `v1.1.0`: backend and its rules with their tests, console, delivery, CR-1 |
-| Measuring, checking and polishing | Sunday 22 November, from 18:00 | about 4 | the full replays and the deadlock they found, the console and accessibility checks, the rolling-upgrade runs, fixes to the console, the documents |
-| Final checks and submission | Monday 23 November | to be added | the last bundle build and offline test, the clean-checkout build, the release |
+| Measuring, checking and polishing | Sunday 22 November from 18:00, until after midnight | about 4 | the full replays and the deadlock they found, the console and accessibility checks, the rolling-upgrade runs, fixes to the console, the documents |
 
 The hours are reconstructed from the AI session log, not from a stopwatch: time between messages counts when the pause is
 under 30 minutes (under 15 minutes gives 11 hours in total). They include the time the assistant spent running builds and tests, so
