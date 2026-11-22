@@ -5,6 +5,8 @@ import com.example.geoalert.alerts.domain.Alert;
 import com.example.geoalert.alerts.domain.AlertCommandStore;
 import com.example.geoalert.alerts.domain.AlertRules;
 import com.example.geoalert.alerts.domain.AlertRules.Decision;
+import com.example.geoalert.alerts.domain.AuditAction;
+import com.example.geoalert.alerts.domain.AuditLog;
 import com.example.geoalert.common.web.ApiException;
 import java.util.function.BiFunction;
 import org.springframework.http.HttpStatus;
@@ -22,19 +24,27 @@ public class AlertCommandService {
     public static final int MAX_NOTE_LENGTH = 500;
 
     private final AlertCommandStore store;
+    private final AuditLog audit;
     private final TransactionTemplate tx;
 
-    public AlertCommandService(AlertCommandStore store, TransactionTemplate tx) {
+    public AlertCommandService(AlertCommandStore store, AuditLog audit, TransactionTemplate tx) {
         this.store = store;
+        this.audit = audit;
         this.tx = tx;
     }
 
     public Alert claim(String alertId, Actor actor) {
-        return command(alertId, actor, AlertRules::claim, (a) -> store.claim(a.id(), actor.username()));
+        return command(
+                alertId,
+                actor,
+                AuditAction.CLAIMED,
+                AlertRules::claim,
+                (a) -> store.claim(a.id(), actor.username()));
     }
 
     public Alert release(String alertId, Actor actor) {
-        return command(alertId, actor, AlertRules::release, (a) -> store.release(a.id()));
+        return command(
+                alertId, actor, AuditAction.RELEASED, AlertRules::release, (a) -> store.release(a.id()));
     }
 
     public Alert resolve(String alertId, Actor actor, String note) {
@@ -47,6 +57,7 @@ public class AlertCommandService {
         return command(
                 alertId,
                 actor,
+                AuditAction.RESOLVED,
                 AlertRules::resolve,
                 (a) -> store.resolve(a.id(), actor.username(), note));
     }
@@ -54,6 +65,7 @@ public class AlertCommandService {
     private Alert command(
             String alertId,
             Actor actor,
+            AuditAction action,
             BiFunction<Alert, Actor, Decision> rule,
             java.util.function.Function<Alert, Alert> apply) {
         long id = parseId(alertId);
@@ -69,7 +81,18 @@ public class AlertCommandService {
                                                             "There is no such alert."));
                     return switch (rule.apply(current, actor)) {
                         case Decision.NoChange noChange -> current;
-                        case Decision.Apply applied -> apply.apply(current);
+                        case Decision.Apply applied -> {
+                            Alert updated = apply.apply(current);
+                            // R5: the audit entry is written in this same transaction, so the
+                            // change and its record are stored together or not at all
+                            audit.record(
+                                    updated.id(),
+                                    actor.username(),
+                                    action,
+                                    current.status(),
+                                    updated.status());
+                            yield updated;
+                        }
                         case Decision.Refuse refuse -> throw refusal(refuse);
                     };
                 });

@@ -1,6 +1,7 @@
 package com.example.geoalert.alerts.application;
 
 import com.example.geoalert.alerts.domain.AlertStore;
+import com.example.geoalert.alerts.domain.AuditLog;
 import com.example.geoalert.alerts.domain.NewAlert;
 import com.example.geoalert.positions.domain.PositionRule.ZoneEntry;
 import java.util.List;
@@ -14,9 +15,11 @@ import org.springframework.stereotype.Service;
 public class AlertOpening {
 
     private final AlertStore store;
+    private final AuditLog audit;
 
-    public AlertOpening(AlertStore store) {
+    public AlertOpening(AlertStore store, AuditLog audit) {
         this.store = store;
+        this.audit = audit;
     }
 
     /** Returns the alerts that were really created (an active alert for the pair is skipped). */
@@ -31,6 +34,9 @@ public class AlertOpening {
                                                 e.trigger().reportId(),
                                                 e.trigger().observedAt()))
                         .toList();
-        return store.insertNew(due);
+        List<AlertStore.Created> created = store.insertNew(due);
+        // R5: the OPENED entry is written with the alert, in the same transaction
+        audit.recordOpened(created.stream().map(AlertStore.Created::id).toList());
+        return created;
     }
 }
