@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.geoalert.support.PermitAllSecurityTestConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -20,7 +21,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @WebMvcTest(controllers = ProblemExceptionHandlerTest.ThrowingController.class)
-@Import({ProblemExceptionHandler.class, ProblemExceptionHandlerTest.ThrowingController.class})
+@Import({
+    ProblemExceptionHandler.class,
+    ProblemExceptionHandlerTest.ThrowingController.class,
+    PermitAllSecurityTestConfig.class
+})
 class ProblemExceptionHandlerTest {
 
     @RestController

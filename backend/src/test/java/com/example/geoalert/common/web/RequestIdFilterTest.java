@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.example.geoalert.health.HealthController;
+import com.example.geoalert.support.PermitAllSecurityTestConfig;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(HealthController.class)
-@Import(RequestIdFilter.class)
+@Import({RequestIdFilter.class, PermitAllSecurityTestConfig.class})
 class RequestIdFilterTest {
 
     @Autowired private MockMvc mvc;

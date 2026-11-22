@@ -30,6 +30,16 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Stateless authentication: signed JWT checked by either instance with a shared key. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
         <!-- Data access is plain SQL through Spring JDBC (no ORM). -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
