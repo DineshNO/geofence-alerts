@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: geofence-alerts
+  main:
+    banner-mode: "off"
+    # The start-up line names the operating-system user and the install path: no personal
+    # data in logs.
+    log-startup-info: false
+  lifecycle:
+    # Let in-flight requests finish when an instance is stopped for the rolling upgrade.
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: 8080
+  shutdown: graceful
+
+logging:
+  structured:
+    format:
+      # One JSON object per line on standard output: timestamp, level, logger, message and
+      # every logging-context entry (the request id).
+      console: logstash
