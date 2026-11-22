@@ -54,9 +54,10 @@ feed_token = login(feed_user, feed_pass)
 read_token = login(reader_user, reader_pass)
 def asset_of(line):
     try:
-        return json.loads(line).get("assetId")
+        value = json.loads(line)
     except ValueError:
         return None  # the feed has damaged lines on purpose
+    return value.get("assetId") if isinstance(value, dict) else None
 
 
 assets = sorted({a for a in map(asset_of, lines) if isinstance(a, str) and a.startswith("AST-")})[:50]
