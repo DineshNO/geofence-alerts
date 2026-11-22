@@ -76,3 +76,15 @@ while two feeders (50-line batches) and four readers (viewport, track, alert lis
 Limits of this test: about 20 requests per second for about two minutes, not the real load; live alert
 streams were not part of the count (a stream on a replaced backend ends and the console reconnects, which
 the console tests cover); no negative control (a naive restart of both backends at once) was run.
+
+## Final offline install of 1.1.0 (`deploy/scripts/test-offline-install.sh 1.1.0`)
+
+All images of the system removed first, then only the bundle files, a users file different from the development
+one, and the five commands of INSTALL.md. Result: `sha256sum -c` OK for all five files; every service healthy;
+health `UP`; console HTTP 200; login with the new file 200, with an old user 401, with a wrong password 401; the
+backend has no route to another host (`wget: bad address`). The whole feed then loaded with 0 errors and 0
+retries (18,455 lines/s); every row already had its type, `sql/20-verify.sql` showed `missing = 0`, and the
+NOT NULL and index steps ran on the fresh system without a backfill.
+
+Bundle files (each far below 2 GB): images 1.0.0 and 1.1.0 about 245 MB each, two deploy archives of a few KB,
+`INSTALL.md`, `SHA256SUMS`.
