@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Geofence Alert API (fixed contract)
-  version: 1.0.0
+  version: 1.1.0
   description: |
     Fixed external contract for the geofence alerting service.
     Implement these endpoints exactly as described. Automated checks call them.
@@ -152,6 +152,10 @@ paths:
         - { name: assetId, in: path, required: true, schema: { type: string } }
         - { name: from, in: query, schema: { type: string, format: date-time } }
         - { name: to, in: query, schema: { type: string, format: date-time } }
+        - name: sourceType
+          in: query
+          description: Only reports of this source type (added in 1.1.0).
+          schema: { $ref: "#/components/schemas/SourceType" }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 5000, default: 500 } }
       responses:
         "200":
@@ -385,6 +389,14 @@ components:
         lat: { type: number }
         lon: { type: number }
         source: { type: string, nullable: true }
+        sourceType:
+          $ref: "#/components/schemas/SourceType"
+    SourceType:
+      type: string
+      description: >
+        Derived from the prefix of source (SAT, GND, MOB; anything else is UNKNOWN).
+        Added in 1.1.0. Not required, so a console of 1.1.0 also works against a 1.0.0 backend.
+      enum: [SATELLITE, GROUND, MOBILE, UNKNOWN]
     AlertStatus:
       type: string
       enum: [OPEN, CLAIMED, RESOLVED]

@@ -274,6 +274,8 @@ export interface paths {
                 query?: {
                     from?: string;
                     to?: string;
+                    /** @description Only reports of this source type (added in 1.1.0). */
+                    sourceType?: components["schemas"]["SourceType"];
                     limit?: number;
                 };
                 header?: never;
@@ -671,7 +673,14 @@ export interface components {
             lat: number;
             lon: number;
             source?: string | null;
+            sourceType?: components["schemas"]["SourceType"];
         };
+        /**
+         * @description Derived from the prefix of source (SAT, GND, MOB; anything else is UNKNOWN). Added in 1.1.0. Not required, so a console of 1.1.0 also works against a 1.0.0 backend.
+         *
+         * @enum {string}
+         */
+        SourceType: "SATELLITE" | "GROUND" | "MOBILE" | "UNKNOWN";
         /** @enum {string} */
         AlertStatus: "OPEN" | "CLAIMED" | "RESOLVED";
         Alert: {

@@ -53,6 +53,7 @@ export function AssetDetail({ assetId, onClose, asset, track }: Props) {
                 <tr>
                   <th scope="col">Observed</th>
                   <th scope="col">Position</th>
+                  <th scope="col">Source type</th>
                 </tr>
               </thead>
               <tbody>
@@ -62,6 +63,7 @@ export function AssetDetail({ assetId, onClose, asset, track }: Props) {
                     <td>
                       {formatCoordinate(point.lat)}, {formatCoordinate(point.lon)}
                     </td>
+                    <td>{point.sourceType ?? '–'}</td>
                   </tr>
                 ))}
               </tbody>
