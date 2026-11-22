@@ -1,0 +1,4 @@
+databaseChangeLog:
+  - include:
+      file: changes/001-ingest-tables.sql
+      relativeToChangelogFile: true
