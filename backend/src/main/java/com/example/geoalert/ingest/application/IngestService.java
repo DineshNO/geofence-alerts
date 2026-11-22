@@ -7,6 +7,7 @@ import com.example.geoalert.ingest.domain.ParsedReport;
 import com.example.geoalert.ingest.domain.RejectedLine;
 import com.example.geoalert.ingest.domain.RejectedLineStore;
 import com.example.geoalert.ingest.domain.ReportStore;
+import com.example.geoalert.positions.application.PositionService;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +32,7 @@ public class IngestService {
 
     private final LineValidator validator = new LineValidator();
     private final ReportStore reports;
+    private final PositionService positions;
     private final RejectedLineStore rejectedLines;
     private final BatchLog batchLog;
     private final TransactionTemplate tx;
@@ -38,11 +40,13 @@ public class IngestService {
 
     public IngestService(
             ReportStore reports,
+            PositionService positions,
             RejectedLineStore rejectedLines,
             BatchLog batchLog,
             TransactionTemplate tx,
             @Value("${app.instance-name:backend}") String instance) {
         this.reports = reports;
+        this.positions = positions;
         this.rejectedLines = rejectedLines;
         this.batchLog = batchLog;
         this.tx = tx;
@@ -94,6 +98,11 @@ public class IngestService {
         Set<String> storedIds = valid.isEmpty() ? Set.of() : reports.insertNew(valid);
         int accepted = storedIds.size();
         int duplicates = validLines - accepted;
+
+        // only reports that were really new move positions; a duplicate changes nothing (R1)
+        List<ParsedReport> newReports =
+                valid.stream().filter(r -> storedIds.contains(r.reportId())).toList();
+        positions.apply(newReports);
 
         if (!rejected.isEmpty()) {
             rejectedLines.saveAll(batchId, rejected);
