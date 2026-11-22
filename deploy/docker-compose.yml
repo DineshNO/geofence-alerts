@@ -129,7 +129,7 @@ services:
       - java
       - -cp
       - /app/app.jar
-      - -Dloader.main=com.example.geoalert.MigrateMain
+      - -Dloader.main=io.geoalert.MigrateMain
       - org.springframework.boot.loader.launch.PropertiesLauncher
 
   backend-1:

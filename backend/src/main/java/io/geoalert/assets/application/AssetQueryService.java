@@ -1,0 +1,35 @@
+package io.geoalert.assets.application;
+
+import io.geoalert.assets.domain.AssetPosition;
+import io.geoalert.assets.domain.AssetQueries;
+import io.geoalert.assets.domain.BoundingBox;
+import io.geoalert.assets.domain.SourceType;
+import io.geoalert.assets.domain.TrackPoint;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.stereotype.Service;
+
+/** Reads current positions and tracks. Each call is one SELECT, so it needs no transaction. */
+@Service
+public class AssetQueryService {
+
+    private final AssetQueries queries;
+
+    public AssetQueryService(AssetQueries queries) {
+        this.queries = queries;
+    }
+
+    public List<AssetPosition> inBox(BoundingBox box, int limit) {
+        return queries.inBox(box, limit);
+    }
+
+    public Optional<AssetPosition> find(String assetId) {
+        return queries.find(assetId);
+    }
+
+    public List<TrackPoint> track(
+            String assetId, Instant from, Instant to, SourceType sourceType, int limit) {
+        return queries.track(assetId, from, to, sourceType, limit);
+    }
+}

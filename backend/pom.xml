@@ -13,7 +13,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.example.geoalert</groupId>
+    <groupId>io.geoalert</groupId>
     <artifactId>geofence-alerts-backend</artifactId>
     <version>1.1.0</version>
     <name>geofence-alerts-backend</name>
