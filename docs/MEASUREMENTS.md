@@ -101,7 +101,7 @@ new alert was delivered.
 The whole feed (215,965 reports) loaded into 1.0.0, then the upgrade steps of INSTALL.md run one by one
 while two feeders (50-line batches) and four readers (viewport, track, alert list) ran continuously.
 
-- Requests during the whole upgrade: **3,803 sent, 0 failed.**
+- Requests during the whole upgrade: **3,726 sent, 0 failed** (the run on the final bundle; the first run had 3,803 sent, 0 failed).
 - 1.0.0 delivering on the expanded schema: 3 of 3 batches answered HTTP 200; its rows had no type
   until the backfill.
 - Backfill with traffic running: 4 s for 223,931 rows, including the catch-up run; `missing` 0 at the end.
@@ -120,6 +120,11 @@ health `UP`; console HTTP 200; login with the new file 200, with an old user 401
 backend has no route to another host (`wget: bad address`). The whole feed then loaded with 0 errors and 0
 retries (18,455 lines/s); every row already had its type, `sql/20-verify.sql` showed `missing = 0`, and the
 NOT NULL and index steps ran on the fresh system without a backfill.
+
+The same install test was repeated on the final bundle (after the package rename, the rule pipeline and the console changes) with
+the same result, and the rolling upgrade above was rerun on it. That run also found that a bundle built while the `v1.1.0`
+tag pointed at an older commit carries that commit's compose file, which names a class that no longer exists; the bundle
+script now refuses to build in that case.
 
 Bundle files (each far below 2 GB): images 1.0.0 and 1.1.0 about 245 MB each, two deploy archives of a few KB,
 `INSTALL.md`, `SHA256SUMS`.
