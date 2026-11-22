@@ -15,10 +15,22 @@ the Compose plugin, and the tools `tar`, `gzip`, `cat` and `sha256sum`. Port 808
 | `SHA256SUMS` | the checksum of every other file |
 | `INSTALL.md` | this file |
 
-## Start a version on an empty database (five commands)
+Three procedures follow: **(a)** start 1.1.0 on an empty database, **(b)** start 1.0.0 on an empty database, **(c)** upgrade a
+running 1.0.0 to 1.1.0 without stopping it. Have your users file ready first (see "The users file" below).
 
-Have your users file ready (see "The users file" below). The commands name version 1.0.0; use 1.1.0 to install
-the newest version directly. Then:
+## (a) Start version 1.1.0 on an empty database (five commands)
+
+```
+sha256sum -c SHA256SUMS
+tar -xzf geoalert-deploy-1.1.0.tar.gz
+docker load -i geoalert-images-1.1.0.tar.gz
+cat /path/to/your/users.json > secrets/users.json
+docker compose up -d
+```
+
+## (b) Start version 1.0.0 on an empty database (five commands)
+
+Use an empty folder, so that nothing of 1.1.0 is in it.
 
 ```
 sha256sum -c SHA256SUMS
@@ -28,19 +40,20 @@ cat /path/to/your/users.json > secrets/users.json
 docker compose up -d
 ```
 
-The first start takes about a minute: it creates the database password and the signing key, applies the
-database schema, then starts two backend instances, the load balancer and the console.
+**After (a) or (b):** the first start takes about a minute: it creates the database password and the signing key,
+applies the database schema, then starts two backend instances, the load balancer and the console.
 
 * **The console and the API:** `http://<this machine>:8080` (the console is the page, the API is under `/api`).
+* **The users file goes** at `secrets/users.json` (the fourth command), before the first start.
 * **Is it up?** `docker compose ps` shows every service `healthy`; `docker compose exec lb wget -qO- http://localhost:8080/health` answers `{"status":"UP"}`.
 * **Sign in** with a user from your users file.
 
-## Upgrade from 1.0.0 to 1.1.0 without stopping the service
+## (c) Upgrade a running 1.0.0 to 1.1.0 without stopping the service
 
 Version 1.1.0 adds the source type of each report (change request CR-1). The upgrade runs while the system is in
 use: the database changes in small safe steps, and the two backends are replaced one at a time. Read
 `docs/CR-1.md` for what each step does, what it locks, how to check it and how to undo it.
-Work in the folder of the running 1.0.0 install, with the new files next to it.
+Work in the folder of the running 1.0.0 install (procedure (b)); the new files go into the same folder.
 
 **1. Prepare** (nothing running is touched):
 
