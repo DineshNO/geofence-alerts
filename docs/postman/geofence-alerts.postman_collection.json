@@ -1422,8 +1422,59 @@
       ]
     },
     {
-      "name": "6 Alert workflow (run in order; it changes the alert)",
+      "name": "6 Alert workflow (run in order; it changes alerts, and can be run again)",
       "item": [
+        {
+          "name": "Step 0: pick an OPEN alert to work on (saves its id)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts?status=OPEN&limit=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "alerts"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN"
+                },
+                {
+                  "key": "limit",
+                  "value": "1"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{opToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", function () { pm.response.to.have.status(200); });",
+                  "const r = pm.response.json(); pm.test(\"an OPEN alert exists\", function () { pm.expect(r.items.length > 0).to.eql(true); });",
+                  "if (r.items.length) { pm.collectionVariables.set(\"alertId\", r.items[0].alertId); }"
+                ]
+              }
+            }
+          ]
+        },
         {
           "name": "Claim as op01",
           "request": {
