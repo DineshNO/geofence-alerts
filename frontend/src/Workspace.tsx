@@ -29,6 +29,7 @@ export function Workspace() {
           zones={zones.data ?? []}
           assets={assets.data?.items ?? []}
           selectedAssetId={selected}
+          selectedPosition={asset ? { lat: asset.lat, lon: asset.lon } : null}
           track={points}
           onSelect={setSelected}
           onBoundsChange={setBbox}

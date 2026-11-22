@@ -87,3 +87,35 @@ export function hasChanged(previous: Map<string, string> | null, next: Map<strin
   }
   return false;
 }
+
+/**
+ * The longitude of the same place that is drawn nearest to the middle of the map. The map repeats the world
+ * to the east and west, so an asset at -177 may be on screen as 183.
+ */
+export function nearestLongitude(lon: number, centerLon: number): number {
+  return lon + 360 * Math.round((centerLon - lon) / 360);
+}
+
+/** A rectangle on the map, in pixels from its top-left corner. */
+export interface PixelBox {
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
+
+/** True when a point is outside the map or under the box that is drawn over it (with a margin around the box). */
+export function isHiddenOrOffscreen(
+  point: { x: number; y: number },
+  map: { width: number; height: number },
+  overlay: PixelBox,
+  margin = 24,
+): boolean {
+  const outside = point.x < 0 || point.y < 0 || point.x > map.width || point.y > map.height;
+  const underOverlay =
+    point.x >= overlay.left - margin &&
+    point.x <= overlay.right + margin &&
+    point.y >= overlay.top - margin &&
+    point.y <= overlay.bottom + margin;
+  return outside || underOverlay;
+}

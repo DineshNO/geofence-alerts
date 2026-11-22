@@ -122,3 +122,21 @@ describe('AlertRow', () => {
     expect(onShowAsset).toHaveBeenCalledWith('AST-9');
   });
 });
+
+describe('the resolve section expands and collapses', () => {
+  it('opens and closes the note form with the Resolve button, and closes it with Escape', () => {
+    show(alert({ status: 'CLAIMED', claimedBy: 'op01' }), operator);
+    const toggle = screen.getByRole('button', { name: /resolve alert 5/i });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByLabelText(/Note/)).toBeNull();
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByLabelText(/Note/)).toBeTruthy();
+    fireEvent.click(toggle);
+    expect(screen.queryByLabelText(/Note/)).toBeNull();
+    fireEvent.click(toggle);
+    fireEvent.keyDown(screen.getByLabelText(/Note/), { key: 'Escape' });
+    expect(screen.queryByLabelText(/Note/)).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+  });
+});

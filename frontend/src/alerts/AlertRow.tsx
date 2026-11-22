@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Alert } from '../api/types';
 import { formatTime } from '../map/format';
@@ -19,6 +19,7 @@ export function AlertRow({ alert, me, onShowAsset }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [note, setNote] = useState('');
+  const toggle = useRef<HTMLButtonElement>(null);
 
   const supervisor = me.role === 'SUPERVISOR';
   const mine = alert.claimedBy === me.username;
@@ -66,20 +67,39 @@ export function AlertRow({ alert, me, onShowAsset }: Props) {
             Claim
           </button>
         )}
-        {alert.status === 'CLAIMED' && (mine || supervisor) && !resolving && (
+        {alert.status === 'CLAIMED' && (mine || supervisor) && (
           <>
             <button type="button" disabled={busy} onClick={() => void give('release')} aria-label={`Release ${label}`}>
               Release
             </button>
-            <button type="button" className="primary" disabled={busy} onClick={() => setResolving(true)} aria-label={`Resolve ${label}`}>
-              Resolve…
+            <button
+              type="button"
+              className="primary"
+              disabled={busy}
+              onClick={() => setResolving((open) => !open)}
+              aria-label={`Resolve ${label}`}
+              aria-expanded={resolving}
+              aria-controls={`resolve-form-${alert.alertId}`}
+              ref={toggle}
+            >
+              {resolving ? 'Resolve ▴' : 'Resolve ▾'}
             </button>
           </>
         )}
       </div>
 
       {resolving && (
-        <form className="resolve" onSubmit={submitResolve}>
+        <form
+          id={`resolve-form-${alert.alertId}`}
+          className="resolve"
+          onSubmit={submitResolve}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setResolving(false);
+              toggle.current?.focus();
+            }
+          }}
+        >
           <label>
             Note (1 to 500 characters)
             <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={3} required autoFocus />
@@ -87,9 +107,6 @@ export function AlertRow({ alert, me, onShowAsset }: Props) {
           <div className="alert-actions">
             <button type="submit" className="primary" disabled={busy || note.trim() === ''}>
               Resolve with this note
-            </button>
-            <button type="button" onClick={() => setResolving(false)}>
-              Cancel
             </button>
           </div>
         </form>

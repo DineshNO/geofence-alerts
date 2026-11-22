@@ -71,6 +71,7 @@ main { min-height: 0; }
 .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; }
 .panel h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
 .panel h3 { font-size: 0.95rem; margin: 0.8rem 0 0.3rem; color: var(--muted); }
+.panel-buttons { display: flex; gap: 0.4rem; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 0.8rem; margin: 0; }
 .facts dt { color: var(--muted); }

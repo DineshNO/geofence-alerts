@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAsset, useRecentTrack } from '../api/queries';
 import type { AssetPosition, TrackPoint } from '../api/types';
 import { formatCoordinate, formatNumber, formatTime } from './format';
@@ -16,9 +16,11 @@ interface Props {
 /** The latest report of the selected asset and its recent track, as text. */
 export function AssetDetail({ assetId, onClose, asset, track, trackLoading = false }: Props) {
   const heading = useRef<HTMLHeadingElement>(null);
+  const [expanded, setExpanded] = useState(true);
 
   // The details open over the map: tell keyboard and screen-reader users by moving focus to them.
   useEffect(() => {
+    setExpanded(true); // a newly chosen asset opens expanded
     heading.current?.focus({ preventScroll: true });
   }, [assetId]);
 
@@ -36,10 +38,23 @@ export function AssetDetail({ assetId, onClose, asset, track, trackLoading = fal
         <h2 id="asset-heading" ref={heading} tabIndex={-1}>
           Asset {assetId}
         </h2>
-        <button type="button" onClick={onClose}>
-          Close <span className="visually-hidden">asset details</span>
-        </button>
+        <div className="panel-buttons">
+          <button
+            type="button"
+            onClick={() => setExpanded((open) => !open)}
+            aria-expanded={expanded}
+            aria-controls="asset-body"
+            aria-label={expanded ? 'Collapse asset details' : 'Expand asset details'}
+            title={expanded ? 'Collapse' : 'Expand'}
+          >
+            {expanded ? '▴' : '▾'}
+          </button>
+          <button type="button" onClick={onClose}>
+            Close <span className="visually-hidden">asset details</span>
+          </button>
+        </div>
       </div>
+      <div id="asset-body" hidden={!expanded}>
       {!asset ? (
         <p>Loading…</p>
       ) : (
@@ -95,6 +110,7 @@ export function AssetDetail({ assetId, onClose, asset, track, trackLoading = fal
           )}
         </>
       )}
+      </div>
     </section>
   );
 }

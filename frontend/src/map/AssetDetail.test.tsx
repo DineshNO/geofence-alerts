@@ -36,6 +36,27 @@ describe('AssetDetail as an overlay on the map', () => {
   });
 });
 
+describe('AssetDetail expand and collapse', () => {
+  it('hides the details when collapsed and shows them again when expanded', () => {
+    render(<AssetDetail assetId="AST-1" asset={asset} track={[point('r2', { sourceType: 'GROUND' })]} onClose={() => {}} />);
+    const toggle = screen.getByRole('button', { name: /Collapse/ });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('heading', { name: 'Latest report' })).toBeTruthy();
+    fireEvent.click(toggle);
+    expect(screen.getByRole('button', { name: /Expand/ }).getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('heading', { name: 'Latest report' })).toBeNull(); // hidden from the page and from screen readers
+    fireEvent.click(screen.getByRole('button', { name: /Expand/ }));
+    expect(screen.getByRole('heading', { name: 'Latest report' })).toBeTruthy();
+  });
+
+  it('opens expanded again for another asset', () => {
+    const { rerender } = render(<AssetDetail assetId="AST-1" asset={asset} track={[]} onClose={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Collapse/ }));
+    rerender(<AssetDetail assetId="AST-2" asset={{ ...asset, assetId: 'AST-2' }} track={[]} onClose={() => {}} />);
+    expect(screen.getByRole('button', { name: /Collapse/ })).toBeTruthy();
+  });
+});
+
 describe('AssetDetail while the track is loading', () => {
   it('says it is loading instead of claiming there are no reports', () => {
     render(<AssetDetail assetId="AST-1" asset={asset} track={[]} trackLoading onClose={() => {}} />);

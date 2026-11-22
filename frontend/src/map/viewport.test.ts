@@ -4,6 +4,8 @@ import {
   assetsToGeoJson,
   bboxFromBounds,
   hasChanged,
+  isHiddenOrOffscreen,
+  nearestLongitude,
   signature,
   trackToGeoJson,
   wrapLongitude,
@@ -87,5 +89,32 @@ describe('hasChanged', () => {
     expect(hasChanged(base, signature([asset('A1', 'r1'), asset('A2', 'r9')]))).toBe(true);
     expect(hasChanged(base, signature([asset('A1', 'r1')]))).toBe(true);
     expect(hasChanged(base, signature([asset('A1', 'r1'), asset('A2', 'r2'), asset('A3', 'r3')]))).toBe(true);
+  });
+});
+
+describe('nearestLongitude', () => {
+  it('keeps a longitude that is already nearest', () => {
+    expect(nearestLongitude(176, 174)).toBe(176);
+  });
+  it('shows a western longitude to the east of the date line when the map is centred there', () => {
+    expect(nearestLongitude(-177.3, 174)).toBeCloseTo(182.7);
+    expect(nearestLongitude(179.8, -175)).toBeCloseTo(-180.2);
+  });
+});
+
+describe('isHiddenOrOffscreen', () => {
+  const map = { width: 800, height: 600 };
+  const overlay = { left: 450, top: 10, right: 790, bottom: 430 };
+  it('is false for a point in the free part of the map', () => {
+    expect(isHiddenOrOffscreen({ x: 200, y: 300 }, map, overlay)).toBe(false);
+    expect(isHiddenOrOffscreen({ x: 700, y: 560 }, map, overlay)).toBe(false); // below the card
+  });
+  it('is true for a point under the card or close to its edge', () => {
+    expect(isHiddenOrOffscreen({ x: 600, y: 200 }, map, overlay)).toBe(true);
+    expect(isHiddenOrOffscreen({ x: 435, y: 200 }, map, overlay)).toBe(true);
+  });
+  it('is true for a point outside the map', () => {
+    expect(isHiddenOrOffscreen({ x: -5, y: 300 }, map, overlay)).toBe(true);
+    expect(isHiddenOrOffscreen({ x: 200, y: 700 }, map, overlay)).toBe(true);
   });
 });

@@ -3,12 +3,22 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type { ExpressionSpecification, GeoJSONSource, StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 import type { AssetPosition, Zone } from '../api/types';
-import { assetsToGeoJson, bboxFromBounds, hasChanged, signature, trackToGeoJson } from './viewport';
+import {
+  assetsToGeoJson,
+  bboxFromBounds,
+  hasChanged,
+  isHiddenOrOffscreen,
+  nearestLongitude,
+  signature,
+  trackToGeoJson,
+} from './viewport';
 
 interface Props {
   zones: readonly Zone[];
   assets: readonly AssetPosition[];
   selectedAssetId: string | null;
+  /** Where the selected asset is, once it is known: the map moves so the details card does not cover it. */
+  selectedPosition: { lat: number; lon: number } | null;
   track: readonly [number, number][];
   onSelect(assetId: string): void;
   onBoundsChange(bbox: string): void;
@@ -74,7 +84,15 @@ function labelPosition(zone: Zone): [number, number] {
   return [(Math.min(...lons) + Math.max(...lons)) / 2, Math.max(...lats)];
 }
 
-export function MapView({ zones, assets, selectedAssetId, track, onSelect, onBoundsChange }: Props) {
+export function MapView({
+  zones,
+  assets,
+  selectedAssetId,
+  selectedPosition,
+  track,
+  onSelect,
+  onBoundsChange,
+}: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const ready = useRef(false);
@@ -83,8 +101,8 @@ export function MapView({ zones, assets, selectedAssetId, track, onSelect, onBou
   const frame = useRef<number | null>(null);
 
   // the latest data, read when the map draws
-  const latest = useRef({ zones, assets, selectedAssetId, track });
-  latest.current = { zones, assets, selectedAssetId, track };
+  const latest = useRef({ zones, assets, selectedAssetId, selectedPosition, track });
+  latest.current = { zones, assets, selectedAssetId, selectedPosition, track };
   const callbacks = useRef({ onSelect, onBoundsChange });
   callbacks.current = { onSelect, onBoundsChange };
 
@@ -230,6 +248,31 @@ export function MapView({ zones, assets, selectedAssetId, track, onSelect, onBou
 
   useEffect(() => draw(), [assets, track]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => draw(true), [selectedAssetId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The details card covers the top-right corner of the map. When an asset is chosen that is under the card (or
+  // off the screen), move the map once so the asset ends up in the free part of it.
+  const revealed = useRef<string | null>(null);
+  const hasPosition = selectedPosition !== null;
+  useEffect(() => {
+    if (!selectedAssetId) {
+      revealed.current = null;
+      return;
+    }
+    const map = mapRef.current;
+    const position = latest.current.selectedPosition;
+    if (!map || !position || revealed.current === selectedAssetId) {
+      return;
+    }
+    revealed.current = selectedAssetId;
+    const lng = nearestLongitude(position.lon, map.getCenter().lng);
+    const point = map.project([lng, position.lat]);
+    const size = map.getContainer();
+    const cardWidth = Math.min(21 * 16, size.clientWidth - 19) + 10;
+    const card = { left: size.clientWidth - cardWidth, top: 0, right: size.clientWidth, bottom: 26 * 16 + 10 };
+    if (isHiddenOrOffscreen(point, { width: size.clientWidth, height: size.clientHeight }, card)) {
+      map.easeTo({ center: [lng, position.lat], offset: [-cardWidth / 2, 0], duration: 300 });
+    }
+  }, [selectedAssetId, hasPosition]);
 
   return <div ref={container} className="map" role="application" aria-label="Map of assets and zones" />;
 }
