@@ -45,6 +45,14 @@ The `dev` profile is `backend/config/application-dev.yml` (database, a throwaway
 the console with `BACKEND_URL=http://localhost:18080 npm run dev`. Load data with
 `python3 tools/replay.py --file path/to/feed.ndjson.gz --base-url http://localhost:8080 --username feed --password dev-password --speed max`.
 
+## Try the API in Postman
+
+Import `docs/postman/geofence-alerts.postman_collection.json` (Postman: Import, then choose the file). It has every call
+of the contract plus the added endpoints, with the expected status in each request's test. Run folder 1 first: it signs in
+as each user and saves the tokens. `baseUrl` defaults to `http://localhost:8080`, and the users are those of the dev
+profile (password `dev-password`); change the collection variables for another port or the packaged system. The contract
+itself, `contract/openapi.yaml`, can also be imported directly.
+
 ## The six rules, how each is enforced, and the test
 
 | Rule | Mechanism | Tests |
