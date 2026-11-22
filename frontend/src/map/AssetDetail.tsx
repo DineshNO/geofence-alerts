@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useAsset, useRecentTrack } from '../api/queries';
 import type { AssetPosition, TrackPoint } from '../api/types';
 import { formatCoordinate, formatNumber, formatTime } from './format';
@@ -8,16 +9,35 @@ interface Props {
   /** Passes the recent track up so the map can draw it. */
   asset: AssetPosition | undefined;
   track: readonly TrackPoint[];
+  /** True while the recent track is still being loaded, so an empty list is not shown as "no reports". */
+  trackLoading?: boolean;
 }
 
 /** The latest report of the selected asset and its recent track, as text. */
-export function AssetDetail({ assetId, onClose, asset, track }: Props) {
+export function AssetDetail({ assetId, onClose, asset, track, trackLoading = false }: Props) {
+  const heading = useRef<HTMLHeadingElement>(null);
+
+  // The details open over the map: tell keyboard and screen-reader users by moving focus to them.
+  useEffect(() => {
+    heading.current?.focus({ preventScroll: true });
+  }, [assetId]);
+
   return (
-    <section aria-labelledby="asset-heading" className="panel">
+    <section
+      aria-labelledby="asset-heading"
+      className="panel"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          onClose();
+        }
+      }}
+    >
       <div className="panel-head">
-        <h2 id="asset-heading">Asset {assetId}</h2>
+        <h2 id="asset-heading" ref={heading} tabIndex={-1}>
+          Asset {assetId}
+        </h2>
         <button type="button" onClick={onClose}>
-          Close
+          Close <span className="visually-hidden">asset details</span>
         </button>
       </div>
       {!asset ? (
@@ -41,12 +61,14 @@ export function AssetDetail({ assetId, onClose, asset, track }: Props) {
             <dt>Source</dt>
             <dd>{asset.source ?? '–'}</dd>
             <dt>Source type</dt>
-            <dd>{track.find((point) => point.reportId === asset.reportId)?.sourceType ?? '–'}</dd>
+            <dd>{track.find((point) => point.reportId === asset.reportId)?.sourceType ?? (trackLoading ? 'Loading…' : '–')}</dd>
             <dt>Report</dt>
             <dd>{asset.reportId}</dd>
           </dl>
           <h3>Recent track</h3>
-          {track.length === 0 ? (
+          {trackLoading ? (
+            <p>Loading the recent track…</p>
+          ) : track.length === 0 ? (
             <p>No earlier reports in the last ten minutes.</p>
           ) : (
             <table>
@@ -81,5 +103,5 @@ export function AssetDetail({ assetId, onClose, asset, track }: Props) {
 export function useSelectedAsset(assetId: string | null) {
   const asset = useAsset(assetId);
   const track = useRecentTrack(assetId, asset.data?.observedAt);
-  return { asset: asset.data, track: track.data?.items ?? [] };
+  return { asset: asset.data, track: track.data?.items ?? [], trackLoading: track.isPending };
 }

@@ -46,25 +46,25 @@ including parallel requests and two backend instances against one database.
 Which tests prove which rule is in the README ("The six rules"). Per-class reports with every test name are written to
 `backend/target/surefire-reports/` by the command above.
 
-## Console: 78 tests, 0 failures
+## Console: 82 tests, 0 failures
 
 ```
-✓ src/map/format.test.ts (3 tests) 2ms
+✓ src/alerts/sse.test.ts (8 tests) 2ms
  ✓ src/alerts/cache.test.ts (4 tests) 2ms
- ✓ src/alerts/sse.test.ts (8 tests) 2ms
- ✓ src/alerts/batcher.test.ts (4 tests) 3ms
- ✓ src/map/viewport.test.ts (11 tests) 3ms
- ✓ src/a11y/announce.test.ts (5 tests) 5ms
+ ✓ src/a11y/announce.test.ts (5 tests) 4ms
+ ✓ src/alerts/batcher.test.ts (4 tests) 4ms
  ✓ src/api/client.test.ts (7 tests) 5ms
+ ✓ src/map/viewport.test.ts (11 tests) 3ms
+ ✓ src/map/format.test.ts (3 tests) 2ms
  ✓ src/alerts/explain.test.ts (3 tests) 2ms
- ✓ src/map/AssetDetail.test.tsx (3 tests) 47ms
- ✓ src/zones/ZonesView.test.tsx (5 tests) 67ms
+ ✓ src/zones/ZonesView.test.tsx (5 tests) 65ms
+ ✓ src/map/AssetDetail.test.tsx (7 tests) 60ms
  ✓ src/alerts/AlertRow.test.tsx (6 tests) 78ms
- ✓ src/state/session.test.tsx (8 tests) 145ms
- ✓ src/alerts/liveStream.test.ts (11 tests) 269ms
+ ✓ src/state/session.test.tsx (8 tests) 144ms
+ ✓ src/alerts/liveStream.test.ts (11 tests) 267ms
  Test Files  13 passed (13)
-      Tests  78 passed (78)
-   Duration  901ms (transform 526ms, setup 0ms, collect 1.16s, tests 631ms, environment 5.47s, prepare 521ms)
+      Tests  82 passed (82)
+   Duration  893ms (transform 412ms, setup 0ms, collect 955ms, tests 639ms, environment 4.95s, prepare 549ms)
 ```
 
 Type checking (`npx tsc --noEmit`, strict mode) reports no errors.

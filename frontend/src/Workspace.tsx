@@ -8,13 +8,13 @@ import { MapView } from './map/MapView';
 import { WORLD_BBOX } from './map/viewport';
 import { ZonesPanel } from './zones/ZonesPanel';
 
-/** The map and, beside it, the panels. */
+/** The map, with the selected asset's details over its top-right corner, and beside it the panels. */
 export function Workspace() {
   const [bbox, setBbox] = useState(WORLD_BBOX);
   const [selected, setSelected] = useState<string | null>(null);
   const zones = useZones();
   const assets = useAssetsInView(bbox);
-  const { asset, track } = useSelectedAsset(selected);
+  const { asset, track, trackLoading } = useSelectedAsset(selected);
   const { message, queue } = useAnnouncementQueue();
   const live = useLiveAlerts((events) => queue.addOpened(events));
   useConnectionAnnouncements(live.state, queue);
@@ -40,19 +40,22 @@ export function Workspace() {
               ? 'Not every asset in view is shown. Zoom in to see them all.'
               : `${assets.data?.items.length ?? 0} assets in view`}
         </p>
+        {selected && (
+          <div className="map-overlay">
+            <AssetDetail
+              assetId={selected}
+              asset={asset}
+              track={track}
+              trackLoading={trackLoading}
+              onClose={() => setSelected(null)}
+            />
+          </div>
+        )}
       </div>
       <aside className="side" aria-label="Alerts and details">
         <Announcer message={message} />
         <AlertPanel live={live} onShowAsset={setSelected} />
         <ZonesPanel onShowAsset={setSelected} />
-        {selected ? (
-          <AssetDetail assetId={selected} asset={asset} track={track} onClose={() => setSelected(null)} />
-        ) : (
-          <section className="panel">
-            <h2>Asset</h2>
-            <p>Select an asset on the map to see its latest report and recent track.</p>
-          </section>
-        )}
       </aside>
     </div>
   );

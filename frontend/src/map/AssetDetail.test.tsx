@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AssetPosition, TrackPoint } from '../api/types';
 import { AssetDetail } from './AssetDetail';
 
@@ -19,6 +19,34 @@ const point = (reportId: string, extra: Partial<TrackPoint> = {}): TrackPoint =>
   lat: 1,
   lon: 2,
   ...extra,
+});
+
+describe('AssetDetail as an overlay on the map', () => {
+  it('moves focus to its heading when it opens', () => {
+    render(<AssetDetail assetId="AST-1" asset={asset} track={[]} onClose={() => {}} />);
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Asset AST-1' }));
+  });
+
+  it('closes with the Escape key and with the Close button', () => {
+    const onClose = vi.fn();
+    render(<AssetDetail assetId="AST-1" asset={asset} track={[]} onClose={onClose} />);
+    fireEvent.keyDown(screen.getByRole('heading', { name: 'Asset AST-1' }), { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: /Close/ }));
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('AssetDetail while the track is loading', () => {
+  it('says it is loading instead of claiming there are no reports', () => {
+    render(<AssetDetail assetId="AST-1" asset={asset} track={[]} trackLoading onClose={() => {}} />);
+    expect(screen.getByText('Loading the recent track…')).toBeTruthy();
+    expect(screen.queryByText(/No earlier reports/)).toBeNull();
+  });
+
+  it('says there are no earlier reports once the empty track has loaded', () => {
+    render(<AssetDetail assetId="AST-1" asset={asset} track={[]} onClose={() => {}} />);
+    expect(screen.getByText(/No earlier reports/)).toBeTruthy();
+  });
 });
 
 describe('AssetDetail and the source type (CR-1)', () => {

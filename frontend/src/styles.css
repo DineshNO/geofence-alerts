@@ -66,6 +66,8 @@ main { min-height: 0; }
 .map { position: absolute; inset: 0; }
 .map-note { position: absolute; left: 0.6rem; bottom: 0.6rem; margin: 0; padding: 0.2rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; z-index: 2; }
 .side { overflow: auto; padding: 0.8rem; border-left: 1px solid var(--border); background: var(--bg); display: grid; align-content: start; gap: 0.8rem; }
+.map-overlay { position: absolute; top: 0.6rem; right: 0.6rem; width: min(21rem, calc(100% - 1.2rem)); max-height: min(26rem, calc(100% - 1.2rem)); overflow-y: auto; z-index: 3; border-radius: 8px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45); }
+.map-overlay .panel { margin: 0; }
 .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; }
 .panel h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
 .panel h3 { font-size: 0.95rem; margin: 0.8rem 0 0.3rem; color: var(--muted); }
