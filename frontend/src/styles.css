@@ -72,6 +72,7 @@ main { min-height: 0; }
 .panel h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
 .panel h3 { font-size: 0.95rem; margin: 0.8rem 0 0.3rem; color: var(--muted); }
 .panel-buttons { display: flex; gap: 0.4rem; }
+.icon-btn { display: inline-grid; place-items: center; width: 2rem; height: 2rem; padding: 0; line-height: 0; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 0.8rem; margin: 0; }
 .facts dt { color: var(--muted); }

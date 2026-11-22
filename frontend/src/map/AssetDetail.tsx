@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAsset, useRecentTrack } from '../api/queries';
 import type { AssetPosition, TrackPoint } from '../api/types';
+import { ChevronDownIcon, ChevronUpIcon, CloseIcon } from '../ui/icons';
 import { formatCoordinate, formatNumber, formatTime } from './format';
 
 interface Props {
@@ -41,16 +42,17 @@ export function AssetDetail({ assetId, onClose, asset, track, trackLoading = fal
         <div className="panel-buttons">
           <button
             type="button"
+            className="icon-btn"
             onClick={() => setExpanded((open) => !open)}
             aria-expanded={expanded}
             aria-controls="asset-body"
             aria-label={expanded ? 'Collapse asset details' : 'Expand asset details'}
             title={expanded ? 'Collapse' : 'Expand'}
           >
-            {expanded ? '▴' : '▾'}
+            {expanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
           </button>
-          <button type="button" onClick={onClose}>
-            Close <span className="visually-hidden">asset details</span>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close asset details" title="Close">
+            <CloseIcon />
           </button>
         </div>
       </div>
