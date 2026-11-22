@@ -17,6 +17,8 @@ interface SessionContextValue {
   endedReason: string | null;
   signIn(username: string, password: string): Promise<void>;
   signOut(): void;
+  /** Ends the session because the server no longer accepts the token. */
+  expire(reason: string): void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -49,21 +51,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setEndedReason(null);
   }, []);
 
+  const expire = useCallback((reason: string) => {
+    setSession(null);
+    setEndedReason(reason);
+  }, []);
+
   useEffect(() => {
     if (!session) {
       return undefined;
     }
     const wait = Math.max(0, session.expiresAt - Date.now());
-    const timer = window.setTimeout(() => {
-      setSession(null);
-      setEndedReason('Your session expired. Please sign in again.');
-    }, wait);
+    const timer = window.setTimeout(() => expire('Your session expired. Please sign in again.'), wait);
     return () => window.clearTimeout(timer);
-  }, [session]);
+  }, [session, expire]);
 
   const value = useMemo(
-    () => ({ session, endedReason, signIn, signOut }),
-    [session, endedReason, signIn, signOut],
+    () => ({ session, endedReason, signIn, signOut, expire }),
+    [session, endedReason, signIn, signOut, expire],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

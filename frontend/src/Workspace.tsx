@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAssetsInView, useZones } from './api/queries';
+import { AlertPanel } from './alerts/AlertPanel';
+import { useLiveAlerts } from './alerts/useLiveAlerts';
 import { AssetDetail, useSelectedAsset } from './map/AssetDetail';
 import { MapView } from './map/MapView';
 import { WORLD_BBOX } from './map/viewport';
@@ -11,6 +13,7 @@ export function Workspace() {
   const zones = useZones();
   const assets = useAssetsInView(bbox);
   const { asset, track } = useSelectedAsset(selected);
+  const live = useLiveAlerts(() => undefined);
 
   const points: [number, number][] = track.map((p) => [p.lon, p.lat]);
   const truncated = assets.data?.truncated === true;
@@ -34,7 +37,8 @@ export function Workspace() {
               : `${assets.data?.items.length ?? 0} assets in view`}
         </p>
       </div>
-      <aside className="side" aria-label="Details">
+      <aside className="side" aria-label="Alerts and details">
+        <AlertPanel live={live} onShowAsset={setSelected} />
         {selected ? (
           <AssetDetail assetId={selected} asset={asset} track={track} onClose={() => setSelected(null)} />
         ) : (
