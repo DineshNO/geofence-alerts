@@ -40,20 +40,23 @@ public abstract class PostgresIntegrationTest {
         try {
             Path file = Files.createTempFile("test-users", ".json");
             file.toFile().deleteOnExit();
-            Files.writeString(
-                    file,
-                    """
-                    [
-                      {"username": "feed",  "role": "INGEST",     "password": "test-password-only"},
-                      {"username": "op01",  "role": "OPERATOR",   "password": "test-password-only"},
-                      {"username": "op02",  "role": "OPERATOR",   "password": "test-password-only"},
-                      {"username": "sup01", "role": "SUPERVISOR", "password": "test-password-only"}
-                    ]
-                    """);
+            StringBuilder json = new StringBuilder("[\n");
+            json.append(user("feed", "INGEST")).append(",\n");
+            json.append(user("sup01", "SUPERVISOR"));
+            for (int i = 1; i <= 20; i++) {
+                json.append(",\n").append(user("op%02d".formatted(i), "OPERATOR"));
+            }
+            json.append("\n]\n");
+            Files.writeString(file, json.toString());
             return file;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static String user(String username, String role) {
+        return "{\"username\": \"%s\", \"role\": \"%s\", \"password\": \"%s\"}"
+                .formatted(username, role, TEST_PASSWORD);
     }
 
     @DynamicPropertySource
