@@ -1,4 +1,5 @@
 import { LoginForm } from './state/LoginForm';
+import { Workspace } from './Workspace';
 import { useSession } from './state/session';
 
 export function App() {
@@ -19,8 +20,8 @@ export function App() {
           </button>
         </div>
       </header>
-      <main id="main" tabIndex={-1} className="workspace">
-        <p>The map and the alert panel come next.</p>
+      <main id="main" tabIndex={-1}>
+        <Workspace />
       </main>
     </div>
   );

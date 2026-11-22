@@ -56,4 +56,23 @@ button:disabled { opacity: 0.55; cursor: default; }
 .shell { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border); }
 .who { display: flex; align-items: center; gap: 0.8rem; }
-.workspace { padding: 1rem; min-height: 0; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+main { min-height: 0; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 24rem; height: 100%; min-height: 0; }
+@media (max-width: 52rem) { .workspace { grid-template-columns: 1fr; grid-template-rows: 60vh auto; } }
+.map-wrap { position: relative; min-height: 20rem; }
+.map { position: absolute; inset: 0; }
+.map-note { position: absolute; left: 0.6rem; bottom: 0.6rem; margin: 0; padding: 0.2rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; z-index: 2; }
+.side { overflow: auto; padding: 0.8rem; border-left: 1px solid var(--border); background: var(--bg); display: grid; align-content: start; gap: 0.8rem; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; }
+.panel h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
+.panel h3 { font-size: 0.95rem; margin: 0.8rem 0 0.3rem; color: var(--muted); }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.facts { display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 0.8rem; margin: 0; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 0.25rem 0.4rem; border-bottom: 1px solid var(--border); }
+.zone-label { font-size: 0.72rem; font-weight: 600; padding: 0.05rem 0.35rem; border-radius: 4px; background: rgba(255,255,255,0.8); color: #1c2430; border: 1px solid; white-space: nowrap; pointer-events: none; }
+.zone-label.restricted { border-color: #c62828; }
+.zone-label.advisory { border-color: #6b7280; border-style: dashed; }
