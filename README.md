@@ -19,6 +19,60 @@ audit trail. A console shows the live map and the alert panel.
 | `deploy/` | compose file, load balancer settings, backfill SQL, bundle and test scripts |
 | `docs/` | CR-1, runbook, measurements, alert lifecycle, live alert stream, zone map |
 
+## Architecture and data flow
+
+```
+ feed (replay.py)                       browsers (console)
+        |  POST /api/v1/reports/batch          |  GET /api/v1/assets (about once a second)
+        v                                      |  GET /api/v1/alerts, POST .../claim
+   +---------------------------- nginx (load balancer, port 8080, serves the console) ----+
+   |                       |                                      |
+   v                       v                                      |
+ backend-1 <------ same code, no shared memory ------> backend-2    |
+   |   plain SQL, one transaction per request            |        |
+   +--------------------------+--------------------------+        |
+                              v                                    |
+                    PostgreSQL 16 (the only state)                 |
+        reports (track) | asset_current | alerts | audit_entries | rejected_lines | ingest_batches
+                              |  NOTIFY on commit, LISTEN in each backend
+                              +--------> SSE stream "alert.changed" to the browsers ---+
+```
+
+Layers inside a backend, one package per feature (`ingest`, `positions`, `zones`, `alerts`, `stream`, `assets`, `auth`):
+`domain` (rules and ports, no Spring and no JDBC), `application` (services; **the transaction boundary**), `adapter`
+(web controllers with no data access, JDBC repositories with plain SQL, the PostgreSQL NOTIFY bus).
+
+**A position report, from request to browser**
+
+1. `POST /api/v1/reports/batch` reaches either backend through nginx. `IngestController` hands the lines to `IngestService`.
+2. **Each line is judged alone, in memory** (`LineValidator`: a pipeline of rules by priority). Bad lines become
+   `rejected_lines` rows with code, reason and raw text; good lines go on (R6).
+3. **One transaction for the batch** (`IngestService.persist`):
+   `reports` insert with `ON CONFLICT (report_id) DO NOTHING RETURNING` in report-id order (R1, and no deadlocks);
+   for the newly stored reports, `PositionService` locks or creates each `asset_current` row, moves it only if the report
+   is newer (R2), computes the zones containing the point with JTS, and compares them with the zones stored on the row;
+   for each restricted zone that is new, `AlertOpening` inserts the alert (the partial unique index decides, R3), writes
+   the `OPENED` audit entry in the same transaction (R5) and publishes an event; the batch row is recorded last.
+4. The event is sent with `NOTIFY` and is delivered **only if the transaction commits**. Each backend has one `LISTEN`
+   connection and passes the event to the open SSE streams of its own browsers.
+5. In the browser `liveStream.ts` (a `fetch` stream with the `Authorization` header) parses the event; `batcher.ts` collects
+   events for 250 ms; the console refetches the alert and updates the TanStack Query cache; the alert panel re-renders
+   and announces the new alert politely (at most one announcement every 4 seconds). The map does not use the stream: it
+   asks `GET /api/v1/assets?bbox=` about once a second for the box on screen.
+
+**A claim, from click to audit trail**
+
+1. The operator presses Claim in `AlertRow`; the console sends `POST /api/v1/alerts/{id}/claim` with the bearer token.
+2. `AlertCommandController` passes the caller to `AlertCommandService`, which opens **one transaction**:
+   `SELECT ... FOR UPDATE` on the alert row (so concurrent claims queue), then `AlertRules.claim` (a pure state machine)
+   decides: apply, no change, or refuse with its reason (R4).
+3. On apply, the service updates the alert, **inserts the audit entry in the same transaction** (R5) and publishes the
+   event; then the transaction commits. A refusal rolls back and writes nothing.
+4. The controller answers 200 with the alert, or a problem response (`409 ALERT_ALREADY_CLAIMED`, naming the owner).
+   The console explains a lost race in words (`explain.ts`) and refetches.
+5. After the commit the event reaches every console on both backends, which refetch the alert; the audit trail is
+   `GET /api/v1/alerts/{id}/audit`.
+
 ## Run and test
 
 ```
