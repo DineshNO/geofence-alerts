@@ -3,6 +3,7 @@ package com.example.geoalert.assets.adapter.web;
 import com.example.geoalert.assets.application.AssetQueryService;
 import com.example.geoalert.assets.domain.AssetPosition;
 import com.example.geoalert.assets.domain.BoundingBox;
+import com.example.geoalert.assets.domain.SourceType;
 import com.example.geoalert.assets.domain.TrackPoint;
 import com.example.geoalert.common.web.ApiException;
 import com.example.geoalert.common.web.Limits;
@@ -51,12 +52,14 @@ public class AssetController {
             @PathVariable String assetId,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
+            @RequestParam(required = false) String sourceType,
             @RequestParam(required = false) Integer limit) {
         int max = Limits.check(limit, TRACK_DEFAULT, TRACK_MAX);
         Instant start = parseInstant(from, "from");
         Instant end = parseInstant(to, "to");
+        SourceType type = parseSourceType(sourceType);
         assets.find(assetId).orElseThrow(AssetController::notFound);
-        return Page.of(assets.track(assetId, start, end, max), max);
+        return Page.of(assets.track(assetId, start, end, type, max), max);
     }
 
     // ---- parameters
@@ -102,6 +105,19 @@ public class AssetController {
                     "VALIDATION_FAILED",
                     name + " must be an ISO-8601 date-time.");
         }
+    }
+
+    private static SourceType parseSourceType(String value) {
+        if (value == null) {
+            return null;
+        }
+        return SourceType.parse(value)
+                .orElseThrow(
+                        () ->
+                                new ApiException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "VALIDATION_FAILED",
+                                        "sourceType must be SATELLITE, GROUND, MOBILE or UNKNOWN."));
     }
 
     private static ApiException invalidBox(String detail) {

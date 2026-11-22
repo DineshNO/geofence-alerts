@@ -3,6 +3,7 @@ package com.example.geoalert.assets.adapter.jdbc;
 import com.example.geoalert.assets.domain.AssetPosition;
 import com.example.geoalert.assets.domain.AssetQueries;
 import com.example.geoalert.assets.domain.BoundingBox;
+import com.example.geoalert.assets.domain.SourceType;
 import com.example.geoalert.assets.domain.TrackPoint;
 import com.example.geoalert.common.jdbc.Sql;
 import java.time.Instant;
@@ -61,13 +62,22 @@ public class JdbcAssetQueries implements AssetQueries {
                 .findFirst();
     }
 
-    /** Served by the index on (asset_id, observed_at, id): one asset, oldest first, no sort. */
+    /**
+     * Served by the index on (asset_id, observed_at, id): one asset, oldest first, no sort.
+     *
+     * <p>Rows written before CR-1 (or not yet backfilled) have no stored type. They are read
+     * with the type derived from their source, and the filter matches them the same way, so
+     * the answer is the same before, during and after the backfill.
+     */
     @Override
-    public List<TrackPoint> track(String assetId, Instant from, Instant to, int limit) {
+    public List<TrackPoint> track(
+            String assetId, Instant from, Instant to, SourceType sourceType, int limit) {
         StringBuilder sql =
                 new StringBuilder(
-                        "SELECT report_id, observed_at, lat, lon, source FROM reports"
-                                + " WHERE asset_id = :asset");
+                        "SELECT report_id, observed_at, lat, lon, source,"
+                                + " COALESCE(source_type, "
+                                + SourceType.SQL_DERIVE
+                                + ") AS source_type FROM reports WHERE asset_id = :asset");
         MapSqlParameterSource params = new MapSqlParameterSource("asset", assetId);
         if (from != null) {
             sql.append(" AND observed_at >= :from");
@@ -76,6 +86,11 @@ public class JdbcAssetQueries implements AssetQueries {
         if (to != null) {
             sql.append(" AND observed_at <= :to");
             params.addValue("to", Sql.utc(to));
+        }
+        if (sourceType != null) {
+            sql.append(
+                    " AND COALESCE(source_type, " + SourceType.SQL_DERIVE + ") = :sourceType");
+            params.addValue("sourceType", sourceType.name());
         }
         sql.append(" ORDER BY observed_at, id LIMIT :limit");
         params.addValue("limit", limit + 1);
@@ -88,6 +103,7 @@ public class JdbcAssetQueries implements AssetQueries {
                                 rs.getObject("observed_at", OffsetDateTime.class).toInstant(),
                                 rs.getDouble("lat"),
                                 rs.getDouble("lon"),
-                                rs.getString("source")));
+                                rs.getString("source"),
+                                SourceType.valueOf(rs.getString("source_type"))));
     }
 }

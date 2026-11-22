@@ -34,7 +34,7 @@ class MigrateMainTest {
 
             MigrateMain.migrate(db.getJdbcUrl(), db.getUsername(), db.getPassword());
             assertThat(tables(db)).isEqualTo(first);
-            assertThat(appliedChangesets(db)).isEqualTo(7);
+            assertThat(appliedChangesets(db)).isEqualTo(8);
         }
     }
 

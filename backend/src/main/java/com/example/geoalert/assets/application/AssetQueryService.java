@@ -3,6 +3,7 @@ package com.example.geoalert.assets.application;
 import com.example.geoalert.assets.domain.AssetPosition;
 import com.example.geoalert.assets.domain.AssetQueries;
 import com.example.geoalert.assets.domain.BoundingBox;
+import com.example.geoalert.assets.domain.SourceType;
 import com.example.geoalert.assets.domain.TrackPoint;
 import java.time.Instant;
 import java.util.List;
@@ -27,7 +28,8 @@ public class AssetQueryService {
         return queries.find(assetId);
     }
 
-    public List<TrackPoint> track(String assetId, Instant from, Instant to, int limit) {
-        return queries.track(assetId, from, to, limit);
+    public List<TrackPoint> track(
+            String assetId, Instant from, Instant to, SourceType sourceType, int limit) {
+        return queries.track(assetId, from, to, sourceType, limit);
     }
 }

@@ -14,7 +14,8 @@ public interface AssetQueries {
 
     /**
      * Stored reports of one asset, oldest first, optionally between two instants (inclusive),
-     * at most {@code limit + 1} rows.
+     * of one source type when given (null means all), at most {@code limit + 1} rows.
      */
-    List<TrackPoint> track(String assetId, Instant from, Instant to, int limit);
+    List<TrackPoint> track(
+            String assetId, Instant from, Instant to, SourceType sourceType, int limit);
 }
