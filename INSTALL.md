@@ -55,6 +55,10 @@ use: the database changes in small safe steps, and the two backends are replaced
 `docs/CR-1.md` for what each step does, what it locks, how to check it and how to undo it.
 Work in the folder of the running 1.0.0 install (procedure (b)); the new files go into the same folder.
 
+The steps below are the steps of `docs/CR-1.md`, which also gives for each one what it locks, how to check it and how to
+undo it: step 2 here is CR-1 step 1, step 3 is CR-1 step 2, step 4 is CR-1 step 3, step 5 is CR-1 step 4, step 6 is
+CR-1 steps 5 and 6, and step 7 is CR-1 steps 7 and 8. Step 1 only unpacks files.
+
 **1. Prepare** (nothing running is touched):
 
 ```
@@ -105,7 +109,7 @@ echo "CALL backfill_source_type(10000, 50);" | docker compose exec -T postgres p
 Progress, at any time: `cat sql/20-verify.sql | docker compose exec -T postgres psql -U geoalert -d geoalert`.
 When the call returns, run it once more (it only touches what is still missing) and check that `missing` is 0.
 
-**7. Make the column required, then add its index.** Only when step 4 is finished (no 1.0.0 instance is left)
+**7. Make the column required, then add its index.** Only when steps 3 and 4 are finished (no 1.0.0 instance is left)
 and `missing` is 0:
 
 ```
