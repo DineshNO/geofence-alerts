@@ -9,6 +9,9 @@ export function App() {
   }
   return (
     <div className="shell">
+      <a className="skip" href="#alerts-heading" onClick={() => document.getElementById('alerts-heading')?.focus()}>
+        Skip to the alerts
+      </a>
       <header className="topbar">
         <h1>Alert console</h1>
         <div className="who">

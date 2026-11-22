@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useAssetsInView, useZones } from './api/queries';
+import { Announcer, useAnnouncementQueue, useConnectionAnnouncements } from './a11y/Announcer';
 import { AlertPanel } from './alerts/AlertPanel';
 import { useLiveAlerts } from './alerts/useLiveAlerts';
 import { AssetDetail, useSelectedAsset } from './map/AssetDetail';
 import { MapView } from './map/MapView';
 import { WORLD_BBOX } from './map/viewport';
+import { ZonesPanel } from './zones/ZonesPanel';
 
 /** The map and, beside it, the panels. */
 export function Workspace() {
@@ -13,7 +15,9 @@ export function Workspace() {
   const zones = useZones();
   const assets = useAssetsInView(bbox);
   const { asset, track } = useSelectedAsset(selected);
-  const live = useLiveAlerts(() => undefined);
+  const { message, queue } = useAnnouncementQueue();
+  const live = useLiveAlerts((events) => queue.addOpened(events));
+  useConnectionAnnouncements(live.state, queue);
 
   const points: [number, number][] = track.map((p) => [p.lon, p.lat]);
   const truncated = assets.data?.truncated === true;
@@ -38,7 +42,9 @@ export function Workspace() {
         </p>
       </div>
       <aside className="side" aria-label="Alerts and details">
+        <Announcer message={message} />
         <AlertPanel live={live} onShowAsset={setSelected} />
+        <ZonesPanel onShowAsset={setSelected} />
         {selected ? (
           <AssetDetail assetId={selected} asset={asset} track={track} onClose={() => setSelected(null)} />
         ) : (

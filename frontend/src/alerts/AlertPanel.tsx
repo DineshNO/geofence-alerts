@@ -29,7 +29,9 @@ export function AlertPanel({ live, onShowAsset }: Props) {
   return (
     <section aria-labelledby="alerts-heading" className="panel">
       <div className="panel-head">
-        <h2 id="alerts-heading">Alerts</h2>
+        <h2 id="alerts-heading" tabIndex={-1}>
+          Alerts
+        </h2>
         <div role="group" aria-label="Show" className="segmented">
           <button type="button" aria-pressed={view === 'active'} onClick={() => setView('active')}>
             Active ({(open.data?.length ?? 0) + (claimed.data?.length ?? 0)})

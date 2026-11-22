@@ -11,7 +11,7 @@ export interface Session {
   expiresAt: number;
 }
 
-interface SessionContextValue {
+export interface SessionContextValue {
   session: Session | null;
   /** Why the last session ended, shown on the sign-in screen. */
   endedReason: string | null;
@@ -21,7 +21,7 @@ interface SessionContextValue {
   expire(reason: string): void;
 }
 
-const SessionContext = createContext<SessionContextValue | null>(null);
+export const SessionContext = createContext<SessionContextValue | null>(null);
 
 /**
  * The signed-in user. The token is kept in memory only: reloading the page means signing in again,
