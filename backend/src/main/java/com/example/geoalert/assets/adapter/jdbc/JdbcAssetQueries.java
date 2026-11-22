@@ -5,8 +5,6 @@ import com.example.geoalert.assets.domain.AssetQueries;
 import com.example.geoalert.assets.domain.BoundingBox;
 import com.example.geoalert.assets.domain.TrackPoint;
 import com.example.geoalert.common.jdbc.Sql;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -18,8 +16,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class JdbcAssetQueries implements AssetQueries {
 
-    private static final String POSITION_COLUMNS =
-            "asset_id, kind, report_id, observed_at, lat, lon, speed_kn, heading_deg, source";
+    private static final String POSITION_COLUMNS = AssetRows.COLUMNS;
 
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -50,7 +47,7 @@ public class JdbcAssetQueries implements AssetQueries {
                         .addValue("minLat", box.minLat())
                         .addValue("maxLat", box.maxLat())
                         .addValue("limit", limit + 1),
-                JdbcAssetQueries::position);
+                AssetRows::map);
     }
 
     @Override
@@ -59,7 +56,7 @@ public class JdbcAssetQueries implements AssetQueries {
                 .query(
                         "SELECT " + POSITION_COLUMNS + " FROM asset_current WHERE asset_id = :id",
                         new MapSqlParameterSource("id", assetId),
-                        JdbcAssetQueries::position)
+                        AssetRows::map)
                 .stream()
                 .findFirst();
     }
@@ -92,18 +89,5 @@ public class JdbcAssetQueries implements AssetQueries {
                                 rs.getDouble("lat"),
                                 rs.getDouble("lon"),
                                 rs.getString("source")));
-    }
-
-    private static AssetPosition position(ResultSet rs, int row) throws SQLException {
-        return new AssetPosition(
-                rs.getString("asset_id"),
-                rs.getString("kind"),
-                rs.getString("report_id"),
-                rs.getObject("observed_at", OffsetDateTime.class).toInstant(),
-                rs.getDouble("lat"),
-                rs.getDouble("lon"),
-                rs.getObject("speed_kn", Double.class),
-                rs.getObject("heading_deg", Double.class),
-                rs.getString("source"));
     }
 }
