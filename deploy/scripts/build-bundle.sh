@@ -33,7 +33,7 @@ for version in "$@"; do
 
   echo "== deploy files $version"
   tar -czf "$OUT/geoalert-deploy-$version.tar.gz" -C "$ROOT/deploy" \
-    docker-compose.yml nginx env secrets/README.txt secrets/users.example.json
+    docker-compose.yml nginx env sql secrets/README.txt secrets/users.example.json
 done
 
 cp "$ROOT/INSTALL.md" "$OUT/INSTALL.md"

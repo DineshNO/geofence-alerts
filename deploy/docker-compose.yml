@@ -111,7 +111,7 @@ services:
   #   docker compose run --rm migrate
   migrate:
     <<: *hardening
-    image: ${MIGRATE_IMAGE:-geoalert/backend:1.0.0}
+    image: ${MIGRATE_IMAGE:-geoalert/backend:1.1.0}
     pull_policy: never
     restart: "no"
     read_only: true
@@ -134,21 +134,21 @@ services:
 
   backend-1:
     <<: *backend
-    image: ${BACKEND_1_IMAGE:-geoalert/backend:1.0.0}
+    image: ${BACKEND_1_IMAGE:-geoalert/backend:1.1.0}
     environment:
       <<: *backend-env
       APP_INSTANCE_NAME: backend-1
 
   backend-2:
     <<: *backend
-    image: ${BACKEND_2_IMAGE:-geoalert/backend:1.0.0}
+    image: ${BACKEND_2_IMAGE:-geoalert/backend:1.1.0}
     environment:
       <<: *backend-env
       APP_INSTANCE_NAME: backend-2
 
   console:
     <<: *hardening
-    image: ${CONSOLE_IMAGE:-geoalert/console:1.0.0}
+    image: ${CONSOLE_IMAGE:-geoalert/console:1.1.0}
     pull_policy: never
     read_only: true
     tmpfs: ["/tmp"]
