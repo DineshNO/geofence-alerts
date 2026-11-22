@@ -22,3 +22,6 @@ deploy/bundle/
 
 *.pdf
 *.zip
+
+# local development state
+.dev/

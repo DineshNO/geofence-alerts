@@ -29,6 +29,19 @@ deploy/scripts/test-offline-install.sh 1.1.0 18080     # installs from the bundl
 deploy/scripts/test-rolling-upgrade.sh path/to/feed.ndjson.gz 18081
 ```
 
+## Develop locally
+
+Needs Docker, JDK 21 and Node. Two terminals:
+
+```
+deploy/scripts/dev-backend.sh 8080            # database in Docker + the backend from source
+cd frontend && npm ci && npm run dev          # the console on http://localhost:5173
+```
+
+Sign in as `op01`, `op02`, `sup01` or `feed` with the password `dev-password` (written to the git-ignored `.dev/`).
+If the backend runs on another port, start the console with `BACKEND_URL=http://localhost:PORT npm run dev`.
+Load data with `python3 tools/replay.py --file path/to/feed.ndjson.gz --base-url http://localhost:8080 --username feed --password dev-password --speed max`.
+
 ## The six rules, how each is enforced, and the test
 
 | Rule | Mechanism | Tests |
