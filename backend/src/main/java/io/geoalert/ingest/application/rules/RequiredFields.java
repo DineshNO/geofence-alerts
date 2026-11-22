@@ -1,12 +1,16 @@
-package io.geoalert.ingest.domain.rules;
+package io.geoalert.ingest.application.rules;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.geoalert.ingest.domain.LineOutcome;
 import io.geoalert.ingest.domain.RejectionCode;
 import java.util.List;
+import io.geoalert.ingest.domain.rules.Json;
+import io.geoalert.ingest.domain.rules.LineRule;
+import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 /** The fields the contract requires must be present and not empty. */
+@Component
 public final class RequiredFields implements LineRule {
 
     @Override

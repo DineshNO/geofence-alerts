@@ -1,11 +1,15 @@
-package io.geoalert.ingest.domain.rules;
+package io.geoalert.ingest.application.rules;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.geoalert.ingest.domain.LineOutcome;
 import io.geoalert.ingest.domain.RejectionCode;
+import io.geoalert.ingest.domain.rules.Json;
+import io.geoalert.ingest.domain.rules.LineRule;
+import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 /** observedAt is an ISO-8601 instant that the database can store. */
+@Component
 public final class Timestamp implements LineRule {
 
     @Override

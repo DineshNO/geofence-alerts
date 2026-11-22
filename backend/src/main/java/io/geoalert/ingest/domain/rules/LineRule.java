@@ -10,9 +10,9 @@ import java.util.Optional;
  *
  * <p>Rules run by ascending {@link #priority()}; the first rule that finds a problem decides the
  * rejection. To add a validation: write a class that implements this interface, give it a
- * priority (see {@link RulePriority}, which leaves gaps for new rules), and add it to
- * {@link io.geoalert.ingest.domain.LineValidator#standard()}. Its place in the order comes from
- * its priority, not from where it sits in the list.
+ * priority (see {@code RulePriority}, which leaves gaps for new rules), and mark it as a Spring
+ * component in the application layer. Spring hands every rule to the validator, and the order
+ * comes from the priority, not from a list.
  */
 public interface LineRule {
 

@@ -1,4 +1,4 @@
-package io.geoalert.ingest.domain.rules;
+package io.geoalert.ingest.application.rules;
 
 /**
  * The priorities of the standard rules, with gaps so a new rule can go between two of them

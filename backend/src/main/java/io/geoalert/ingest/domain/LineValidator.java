@@ -3,12 +3,7 @@ package io.geoalert.ingest.domain;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.geoalert.ingest.domain.rules.AssetId;
-import io.geoalert.ingest.domain.rules.Coordinates;
 import io.geoalert.ingest.domain.rules.LineRule;
-import io.geoalert.ingest.domain.rules.ReportId;
-import io.geoalert.ingest.domain.rules.RequiredFields;
-import io.geoalert.ingest.domain.rules.Timestamp;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -20,9 +15,8 @@ import java.util.Optional;
  *
  * <p>The line is parsed, then run through the {@link LineRule}s by ascending priority (a stable
  * sort, so equal priorities keep the given order): the first problem found is the one reported. A line that passes every rule is turned into a report by
- * {@link ReportAssembler}. The priorities of the standard rules follow the contract: required
- * fields, coordinates, timestamp, then the identifiers. To add a validation, write a rule with a
- * priority and add it to {@link #standard()}; nothing else changes.
+ * {@link ReportAssembler}. The standard rules live in the application layer, and Spring passes them all in. To add a
+ * validation, write a rule with a priority and mark it as a component; nothing else changes.
  */
 public final class LineValidator {
 
@@ -34,22 +28,6 @@ public final class LineValidator {
 
     public LineValidator(List<LineRule> rules) {
         this.rules = rules.stream().sorted(Comparator.comparingInt(LineRule::priority)).toList();
-    }
-
-    /** The rules of the contract, in the order they are applied. */
-    public static LineValidator standard() {
-        return new LineValidator(
-                List.of(
-                        new RequiredFields(),
-                        new Coordinates(),
-                        new Timestamp(),
-                        new AssetId(),
-                        new ReportId()));
-    }
-
-    /** Same as {@link #standard()}; kept so existing callers need no change. */
-    public LineValidator() {
-        this(standard().rules);
     }
 
     public LineOutcome validate(String line) {

@@ -42,7 +42,7 @@ public class IngestService {
     /** Rejected lines are kept truncated, so one huge garbage line cannot fill the table. */
     static final int MAX_STORED_LINE_CHARS = 2048;
 
-    private final LineValidator validator = new LineValidator();
+    private final LineValidator validator;
     private final ReportStore reports;
     private final PositionService positions;
     private final AlertOpening alerts;
@@ -54,6 +54,7 @@ public class IngestService {
     private final String instance;
 
     public IngestService(
+            LineValidator validator,
             ReportStore reports,
             PositionService positions,
             AlertOpening alerts,
@@ -63,6 +64,7 @@ public class IngestService {
             Metrics metrics,
             IngestProperties properties,
             @Value("${app.instance-name:backend}") String instance) {
+        this.validator = validator;
         this.reports = reports;
         this.positions = positions;
         this.alerts = alerts;

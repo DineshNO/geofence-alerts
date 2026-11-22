@@ -1,11 +1,14 @@
-package io.geoalert.ingest.domain.rules;
+package io.geoalert.ingest.application.rules;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.geoalert.ingest.domain.LineOutcome;
 import io.geoalert.ingest.domain.RejectionCode;
+import io.geoalert.ingest.domain.rules.LineRule;
+import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 /** lat and lon are JSON numbers inside the valid range. */
+@Component
 public final class Coordinates implements LineRule {
 
     @Override

@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 /** Every rejection code of the contract, and the rules for optional fields (R6). */
 class LineValidatorTest {
 
-    private final LineValidator validator = new LineValidator();
+    private final LineValidator validator = StandardRules.validator();
 
     private static final String VALID =
             """

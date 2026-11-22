@@ -2,13 +2,13 @@ package io.geoalert.ingest.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.geoalert.ingest.domain.rules.AssetId;
-import io.geoalert.ingest.domain.rules.Coordinates;
+import io.geoalert.ingest.application.rules.AssetId;
+import io.geoalert.ingest.application.rules.Coordinates;
+import io.geoalert.ingest.application.rules.ReportId;
+import io.geoalert.ingest.application.rules.RequiredFields;
+import io.geoalert.ingest.application.rules.RulePriority;
+import io.geoalert.ingest.application.rules.Timestamp;
 import io.geoalert.ingest.domain.rules.LineRule;
-import io.geoalert.ingest.domain.rules.ReportId;
-import io.geoalert.ingest.domain.rules.RequiredFields;
-import io.geoalert.ingest.domain.rules.RulePriority;
-import io.geoalert.ingest.domain.rules.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -62,7 +62,7 @@ class LineRulePipelineTest {
 
     @Test
     void aNewRuleCanRunFirst() {
-        List<LineRule> rules = new ArrayList<>(LineValidatorAccess.standardRules());
+        List<LineRule> rules = new ArrayList<>(StandardRules.list());
         rules.add(rule(1, "first"));
         assertThat(((LineOutcome.Rejected) new LineValidator(rules).validate(GOOD)).detail()).isEqualTo("first");
     }
@@ -78,14 +78,7 @@ class LineRulePipelineTest {
 
     @Test
     void aLineThatPassesEveryRuleBecomesAReport() {
-        assertThat(new LineValidator(LineValidatorAccess.standardRules()).validate(GOOD))
+        assertThat(StandardRules.validator().validate(GOOD))
                 .isInstanceOf(LineOutcome.Valid.class);
-    }
-
-    /** The standard rules as a list, for tests that add one more. */
-    private static final class LineValidatorAccess {
-        static List<LineRule> standardRules() {
-            return List.of(new RequiredFields(), new Coordinates(), new Timestamp(), new AssetId(), new ReportId());
-        }
     }
 }

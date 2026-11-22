@@ -1,12 +1,15 @@
-package io.geoalert.ingest.domain.rules;
+package io.geoalert.ingest.application.rules;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.geoalert.ingest.domain.LineOutcome;
 import io.geoalert.ingest.domain.RejectionCode;
+import io.geoalert.ingest.domain.rules.LineRule;
+import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
 /** assetId is a string of the allowed shape. */
+@Component
 public final class AssetId implements LineRule {
 
     @Override
