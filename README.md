@@ -77,7 +77,7 @@ Layers inside a backend, one package per feature (`ingest`, `positions`, `zones`
 
 ```
 (cd backend && ./mvnw verify)              # 273 tests; needs Docker (they run against a real PostgreSQL)
-(cd frontend && npm ci && npm test)        # 78 tests
+(cd frontend && npm ci && npm test)        # 90 tests
 deploy/scripts/build-images.sh 1.1.0 && deploy/scripts/build-bundle.sh 1.0.0 1.1.0
 deploy/scripts/test-offline-install.sh 1.1.0 18080     # installs from the bundle on a clean image state
 deploy/scripts/test-rolling-upgrade.sh path/to/feed.ndjson.gz 18081
@@ -171,15 +171,19 @@ in three full replays, and ingest went from 4,333 to 19,750 lines/s.
 | Ingest, full feed, 4 connections, two backends | 19,750 lines/s, 0 errors; replaying twice more stores nothing | MEASUREMENTS |
 | Viewport query, 1,000 assets | one console p95 13.5 ms; 20 consoles polling once a second p95 117 ms (**above the 100 ms target**); 20 consoles back to back p95 869 ms | MEASUREMENTS |
 | Query plans | viewport is a sequential scan of 3,000 rows (2.7 ms), track uses the (asset, time) index, alert page uses the primary key | MEASUREMENTS |
-| Rolling upgrade under traffic | 3,803 requests, 0 failed | MEASUREMENTS, CR-1 |
+| Rolling upgrade under traffic | 3,726 requests, 0 failed | MEASUREMENTS, CR-1 |
 | Offline install | all images removed first; five commands start it; a different users file works; the backend has no route to any other host | `test-offline-install.sh` |
-| Console | 78 component and unit tests; map with 3,000 assets, alert panel, zones table checked in a browser | `frontend/src` |
+| Console at 5x replay | no main-thread task over 50 ms in a 150 s run with 3,000 assets and zoom and pan (the brief's limit is 200 ms) | MEASUREMENTS |
+| Accessibility | axe-core (WCAG 2.1 A and AA) on four screens: 0 violations; keyboard order and visible focus checked by hand | MEASUREMENTS |
+| Connection loss | after the backend returned, the console recovered without a reload in about 9 s, with the missed alert present | MEASUREMENTS |
+| Console tests | 90 component and unit tests | [docs/TESTS.md](docs/TESTS.md) |
 
 **Honest gaps:** the measurements ran on a Mac under Docker with x86 emulation, not the 2-core Linux target, and not
 for long. The 100 ms viewport target is met for one console and missed for 20 consoles on this machine (CPU under
-emulation plus 1,000 items per answer). **No browser long-task profile at 5x replay was captured.** **No automated
-accessibility scan was run** (axe is not installed here); keyboard operation, roles and labels are covered by the
-component tests and by manual checks only. These are the first things to do next.
+emulation plus 1,000 items per answer). The console profile used a scripted interaction in a small browser pane, not a
+person on the interview laptop. No screen reader was used (announcements are covered by component tests only). During
+a backend outage the "interrupted" badge appeared after about 50 seconds in the test, because of the console's 45-second
+watchdog and the development proxy; behind nginx it should be faster, but that was not measured.
 
 ## Written answers
 
@@ -222,10 +226,32 @@ that is plain SQL and tested against the real database would be re-run on MariaD
 * One database, no replica, no backup procedure beyond the volume.
 * One load balancer and one console container: replacing them takes a few seconds of interruption.
 
+## Actual effort
+
+About 12 hours of session time over two days (11 hours when only short pauses are counted), against the expectation of 8 to 10
+hours of focused effort with AI assistance.
+
+| Phase | When | Hours | Work |
+|---|---|---|---|
+| Understanding and design | Saturday 21 November from 12:40, and Sunday until 16:20 | about 6 | reading the brief and the supplied data; learning the domain; deciding every material design point and recording the alternatives; the repository layout and the commit plan |
+| The planned commits | Sunday 22 November, 16:20 to 18:00 | about 1.5 | the 33 commits of the plan, from the first skeleton to `v1.1.0`: backend and its rules with their tests, console, delivery, CR-1 |
+| Measuring, checking and polishing | Sunday 22 November, from 18:00 | about 4 | the full replays and the deadlock they found, the console and accessibility checks, the rolling-upgrade runs, fixes to the console, the documents |
+| Final checks and submission | Monday 23 November | to be added | the last bundle build and offline test, the clean-checkout build, the release |
+
+The hours are reconstructed from the AI session log, not from a stopwatch: time between messages counts when the pause is
+under 30 minutes (under 15 minutes gives 11 hours in total). They include the time the assistant spent running builds and tests, so
+hands-on time was lower. The commit times are in the Git history.
+
+Deliberately left out or incomplete, in the order of the priorities: the daily statistics checkpoint (designed, not built, because
+the batch-log sum is enough at this size); Kubernetes manifests, a CI pipeline and a basemap (the "could" items); and the items
+under "Honest gaps" in the Evidence section.
+
 ## AI-assisted development disclosure
 
-An AI assistant (Claude) was used throughout: to explain the domain, to discuss and record design options, to write
-code, tests and documents, and to run the measurements. The decisions were made by the author in conversation, and every
+The tool was Claude Code (the desktop application) with the Claude Sonnet 5.5 model, named in the co-author trailer of
+each commit. It was used throughout: to explain the domain, to discuss and record design options, to write code, tests
+and documents, and to run the builds, replays and measurements. A browser pane and Docker were driven through the tool
+to check the console and the delivery. The decisions were made by the author in conversation, and every
 decision above has a stated alternative. Everything was run: the tests, the replays, the offline install and the upgrade.
 
 Cases where the AI's output was **wrong** and how each was found:
@@ -244,6 +270,9 @@ Cases where the AI's output was **wrong** and how each was found:
    controller, service and repository.
 7. **The first version of the upgrade steps broke the load balancer**: the extracted archive replaced a bind-mounted
    file, so `nginx -s reload` failed. Found only by running the upgrade for real; the settings are now mounted as folders.
+
+**Instruction and rules files:** no rules file (such as `CLAUDE.md`) was used. The standing instructions given in conversation, the
+agent's memory notes and the planning documents are listed in [docs/ai-instructions.md](docs/ai-instructions.md).
 
 What was *not* delegated: the choice of rules mechanisms, the failure policy, the audit decision, the statistics
 checkpoint idea, and what to write in this README about the gaps.
