@@ -70,7 +70,8 @@ function labelPosition(zone: Zone): [number, number] {
   const points = ring ?? [];
   const lons = points.map((p) => p[0] ?? 0);
   const lats = points.map((p) => p[1] ?? 0);
-  return [(Math.min(...lons) + Math.max(...lons)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2];
+  // the middle of the top edge: the label sits just above the zone, so it does not cover the assets inside it
+  return [(Math.min(...lons) + Math.max(...lons)) / 2, Math.max(...lats)];
 }
 
 export function MapView({ zones, assets, selectedAssetId, track, onSelect, onBoundsChange }: Props) {
@@ -217,7 +218,7 @@ export function MapView({ zones, assets, selectedAssetId, track, onSelect, onBou
         element.className = `zone-label ${zone.zoneClass === 'RESTRICTED' ? 'restricted' : 'advisory'}`;
         element.textContent = `${zone.zoneId} ${zone.name}`;
         element.setAttribute('aria-hidden', 'true'); // the zones table is the accessible version
-        return new maplibregl.Marker({ element }).setLngLat(labelPosition(zone)).addTo(map);
+        return new maplibregl.Marker({ element, anchor: 'bottom' }).setLngLat(labelPosition(zone)).addTo(map);
       });
     };
     if (ready.current) {

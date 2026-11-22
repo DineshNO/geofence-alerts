@@ -77,7 +77,7 @@ main { min-height: 0; }
 .facts dd { margin: 0; overflow-wrap: anywhere; }
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { text-align: left; padding: 0.25rem 0.4rem; border-bottom: 1px solid var(--border); }
-.zone-label { font-size: 0.72rem; font-weight: 600; padding: 0.05rem 0.35rem; border-radius: 4px; background: rgba(255,255,255,0.8); color: #1c2430; border: 1px solid; white-space: nowrap; pointer-events: none; }
+.zone-label { font-size: 0.72rem; font-weight: 600; padding: 0.05rem 0.35rem; border-radius: 4px; background: rgba(255,255,255,0.72); color: #1c2430; border: 1px solid; white-space: nowrap; pointer-events: none; }
 .zone-label.restricted { border-color: #c62828; }
 .zone-label.advisory { border-color: #6b7280; border-style: dashed; }
 
