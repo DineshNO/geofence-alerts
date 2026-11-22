@@ -31,16 +31,19 @@ deploy/scripts/test-rolling-upgrade.sh path/to/feed.ndjson.gz 18081
 
 ## Develop locally
 
-Needs Docker, JDK 21 and Node. Two terminals:
+Needs Docker, JDK 21 and Node.
 
 ```
-deploy/scripts/dev-backend.sh 8080            # database in Docker + the backend from source
-cd frontend && npm ci && npm run dev          # the console on http://localhost:5173
+docker run -d --name geoalert-dev-db -p 55432:5432 -e POSTGRES_DB=geoalert -e POSTGRES_USER=geoalert -e POSTGRES_PASSWORD=geoalert postgres:16.16-alpine
+cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev     # the backend on :8080
+cd frontend && npm ci && npm run dev                                    # the console on :5173
 ```
 
-Sign in as `op01`, `op02`, `sup01` or `feed` with the password `dev-password` (written to the git-ignored `.dev/`).
-If the backend runs on another port, start the console with `BACKEND_URL=http://localhost:PORT npm run dev`.
-Load data with `python3 tools/replay.py --file path/to/feed.ndjson.gz --base-url http://localhost:8080 --username feed --password dev-password --speed max`.
+The `dev` profile is `backend/config/application-dev.yml` (database, a throwaway signing key, port) and
+`backend/config/dev-users.json`; that folder is not packaged into the jar or the image. Sign in as `op01`, `op02`,
+`sup01` or `feed` with `dev-password`. On another port, add `-Dspring-boot.run.arguments=--server.port=18080` and start
+the console with `BACKEND_URL=http://localhost:18080 npm run dev`. Load data with
+`python3 tools/replay.py --file path/to/feed.ndjson.gz --base-url http://localhost:8080 --username feed --password dev-password --speed max`.
 
 ## The six rules, how each is enforced, and the test
 

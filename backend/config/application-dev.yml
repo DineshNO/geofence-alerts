@@ -1,0 +1,17 @@
+# Local development only (run with --spring.profiles.active=dev). This folder is not packaged
+# into the jar or the image. The values are throwaway ones for a database that runs on your machine:
+#   docker run -d --name geoalert-dev-db -p 55432:5432 -e POSTGRES_DB=geoalert \
+#     -e POSTGRES_USER=geoalert -e POSTGRES_PASSWORD=geoalert postgres:16.16-alpine
+server:
+  port: 8080            # change if the port is taken: -Dspring-boot.run.arguments=--server.port=18080
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:55432/geoalert
+    username: geoalert
+    password: geoalert
+app:
+  instance-name: dev
+  security:
+    jwt-secret: dev-only-signing-key-change-nothing-here-0123456789
+  users:
+    file: config/dev-users.json
