@@ -32,7 +32,7 @@ The first start takes about a minute: it creates the database password and the s
 database schema, then starts two backend instances, the load balancer and the console.
 
 * **The console and the API:** `http://<this machine>:8080` (the console is the page, the API is under `/api`).
-* **Is it up?** `docker compose ps` shows every service `healthy`; `curl http://localhost:8080/health` answers `{"status":"UP"}`.
+* **Is it up?** `docker compose ps` shows every service `healthy`; `docker compose exec lb wget -qO- http://localhost:8080/health` answers `{"status":"UP"}`.
 * **Sign in** with a user from your users file.
 
 ## Upgrade from 1.0.0 to 1.1.0 without stopping the service
