@@ -40,6 +40,8 @@ export function AssetDetail({ assetId, onClose, asset, track }: Props) {
             <dd>{formatNumber(asset.headingDeg, '°')}</dd>
             <dt>Source</dt>
             <dd>{asset.source ?? '–'}</dd>
+            <dt>Source type</dt>
+            <dd>{track.find((point) => point.reportId === asset.reportId)?.sourceType ?? '–'}</dd>
             <dt>Report</dt>
             <dd>{asset.reportId}</dd>
           </dl>

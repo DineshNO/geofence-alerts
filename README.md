@@ -77,7 +77,7 @@ Layers inside a backend, one package per feature (`ingest`, `positions`, `zones`
 
 ```
 (cd backend && ./mvnw verify)              # 273 tests; needs Docker (they run against a real PostgreSQL)
-(cd frontend && npm ci && npm test)        # 77 tests
+(cd frontend && npm ci && npm test)        # 78 tests
 deploy/scripts/build-images.sh 1.1.0 && deploy/scripts/build-bundle.sh 1.0.0 1.1.0
 deploy/scripts/test-offline-install.sh 1.1.0 18080     # installs from the bundle on a clean image state
 deploy/scripts/test-rolling-upgrade.sh path/to/feed.ndjson.gz 18081
@@ -173,7 +173,7 @@ in three full replays, and ingest went from 4,333 to 19,750 lines/s.
 | Query plans | viewport is a sequential scan of 3,000 rows (2.7 ms), track uses the (asset, time) index, alert page uses the primary key | MEASUREMENTS |
 | Rolling upgrade under traffic | 3,803 requests, 0 failed | MEASUREMENTS, CR-1 |
 | Offline install | all images removed first; five commands start it; a different users file works; the backend has no route to any other host | `test-offline-install.sh` |
-| Console | 77 component and unit tests; map with 3,000 assets, alert panel, zones table checked in a browser | `frontend/src` |
+| Console | 78 component and unit tests; map with 3,000 assets, alert panel, zones table checked in a browser | `frontend/src` |
 
 **Honest gaps:** the measurements ran on a Mac under Docker with x86 emulation, not the 2-core Linux target, and not
 for long. The 100 ms viewport target is met for one console and missed for 20 consoles on this machine (CPU under
