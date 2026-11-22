@@ -22,7 +22,7 @@ audit trail. A console shows the live map and the alert panel.
 ## Run and test
 
 ```
-(cd backend && ./mvnw verify)              # 267 tests; needs Docker (they run against a real PostgreSQL)
+(cd backend && ./mvnw verify)              # 272 tests; needs Docker (they run against a real PostgreSQL)
 (cd frontend && npm ci && npm test)        # 77 tests
 deploy/scripts/build-images.sh 1.1.0 && deploy/scripts/build-bundle.sh 1.0.0 1.1.0
 deploy/scripts/test-offline-install.sh 1.1.0 18080     # installs from the bundle on a clean image state
