@@ -40,6 +40,13 @@
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
 
+        <!-- Geometry: point-in-polygon with holes and several parts (zones). -->
+        <dependency>
+            <groupId>org.locationtech.jts</groupId>
+            <artifactId>jts-core</artifactId>
+            <version>1.20.0</version>
+        </dependency>
+
         <!-- Data access is plain SQL through Spring JDBC (no ORM). -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -74,6 +81,18 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <!-- the zones file lives in data/ at the repository root and is packaged into the jar -->
+            <resource>
+                <directory>../data</directory>
+                <includes>
+                    <include>zones.geojson</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
