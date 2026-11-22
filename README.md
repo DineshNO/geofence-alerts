@@ -140,7 +140,7 @@ that is plain SQL and tested against the real database would be re-run on MariaD
 * The viewport query scans all 3,000 rows. At a much larger fleet it needs a spatial index and a smaller default page.
 * Positions are polled about once a second; only alerts are pushed.
 * No interpolation: a fast asset can cross a small zone between two reports without an alert.
-* Users come from a file read at start; there is no user management and no token refresh.
+* Users come from a file read at start; there is no user management. The console keeps the session in the tab's sessionStorage for the 30-minute token life (a reload keeps you signed in, closing the tab forgets it); there is no token refresh, so after 30 minutes you sign in again, and a script on the page could read the token.
 * One database, no replica, no backup procedure beyond the volume.
 * One load balancer and one console container: replacing them takes a few seconds of interruption.
 

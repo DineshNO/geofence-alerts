@@ -29,7 +29,10 @@ function fillAndSubmit(user: string, password: string) {
   fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 }
 
-beforeEach(() => vi.useRealTimers());
+beforeEach(() => {
+  vi.useRealTimers();
+  window.sessionStorage.clear();
+});
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -88,5 +91,45 @@ describe('sign-in', () => {
     });
     await waitFor(() => expect(screen.getByTestId('state').textContent).toContain('out:Your session expired'));
     expect((await screen.findByRole('alert')).textContent).toContain('session expired');
+  });
+});
+
+describe('keeping the session across a reload', () => {
+  const saved = (expiresAt: number) =>
+    JSON.stringify({ token: 'tok', username: 'op01', role: 'OPERATOR', expiresAt });
+
+  it('restores a saved session that has not expired', () => {
+    window.sessionStorage.setItem('geoalert.session', saved(Date.now() + 60_000));
+    renderApp();
+    expect(screen.getByTestId('state').textContent).toBe('in:op01:OPERATOR');
+  });
+
+  it('ignores and removes a saved session that has expired', () => {
+    window.sessionStorage.setItem('geoalert.session', saved(Date.now() - 1));
+    renderApp();
+    expect(screen.getByTestId('state').textContent).toBe('out:');
+    expect(window.sessionStorage.getItem('geoalert.session')).toBeNull();
+  });
+
+  it('ignores a damaged saved value', () => {
+    window.sessionStorage.setItem('geoalert.session', '{not json');
+    renderApp();
+    expect(screen.getByTestId('state').textContent).toBe('out:');
+  });
+
+  it('saves the session at sign-in', async () => {
+    vi.stubGlobal(
+      'fetch',
+      loginAnswer(200, {
+        accessToken: 'tok',
+        tokenType: 'Bearer',
+        expiresInSec: 1800,
+        user: { username: 'op01', role: 'OPERATOR' },
+      }),
+    );
+    renderApp();
+    fillAndSubmit('op01', 'secret');
+    await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('in:op01:OPERATOR'));
+    expect(JSON.parse(window.sessionStorage.getItem('geoalert.session') ?? '{}').username).toBe('op01');
   });
 });

@@ -23,13 +23,56 @@ export interface SessionContextValue {
 
 export const SessionContext = createContext<SessionContextValue | null>(null);
 
+const STORAGE_KEY = 'geoalert.session';
+
+/** The session saved by this tab, if it has not expired yet. Storage may be blocked: then none. */
+function restore(): Session | null {
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const saved = JSON.parse(raw) as Partial<Session>;
+    if (
+      typeof saved.token === 'string' &&
+      typeof saved.username === 'string' &&
+      typeof saved.role === 'string' &&
+      typeof saved.expiresAt === 'number' &&
+      saved.expiresAt > Date.now()
+    ) {
+      return saved as Session;
+    }
+    window.sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // unreadable or blocked storage: start signed out
+  }
+  return null;
+}
+
+function save(session: Session | null): void {
+  try {
+    if (session) {
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } else {
+      window.sessionStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    // blocked storage: the session simply lasts until the page is reloaded
+  }
+}
+
 /**
- * The signed-in user. The token is kept in memory only: reloading the page means signing in again,
- * and nothing secret is left in the browser's storage. When the token expires the session ends, as
- * the server also closes the live stream at that moment.
+ * The signed-in user. The session (token, user, expiry) is kept in this tab's sessionStorage, so a
+ * reload keeps you signed in until the token expires (30 minutes) or you sign out; closing the tab
+ * forgets it. When the token expires the session ends, as the server also closes the live stream at
+ * that moment. Trade-off: a script running on the page could read the token.
  */
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSessionState] = useState<Session | null>(restore);
+  const setSession = useCallback((next: Session | null) => {
+    save(next);
+    setSessionState(next);
+  }, []);
   const [endedReason, setEndedReason] = useState<string | null>(null);
 
   const signIn = useCallback(async (username: string, password: string) => {
@@ -44,17 +87,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       role: response.user.role,
       expiresAt: Date.now() + response.expiresInSec * 1000,
     });
-  }, []);
+  }, [setSession]);
 
   const signOut = useCallback(() => {
     setSession(null);
     setEndedReason(null);
-  }, []);
+  }, [setSession]);
 
   const expire = useCallback((reason: string) => {
     setSession(null);
     setEndedReason(reason);
-  }, []);
+  }, [setSession]);
 
   useEffect(() => {
     if (!session) {
