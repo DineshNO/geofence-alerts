@@ -8,6 +8,9 @@ import com.example.geoalert.alerts.domain.AlertRules.Decision;
 import com.example.geoalert.alerts.domain.AuditAction;
 import com.example.geoalert.alerts.domain.AuditLog;
 import com.example.geoalert.common.web.ApiException;
+import com.example.geoalert.stream.domain.AlertEvent;
+import com.example.geoalert.stream.domain.AlertEventBus;
+import java.util.List;
 import java.util.function.BiFunction;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,11 +28,14 @@ public class AlertCommandService {
 
     private final AlertCommandStore store;
     private final AuditLog audit;
+    private final AlertEventBus events;
     private final TransactionTemplate tx;
 
-    public AlertCommandService(AlertCommandStore store, AuditLog audit, TransactionTemplate tx) {
+    public AlertCommandService(
+            AlertCommandStore store, AuditLog audit, AlertEventBus events, TransactionTemplate tx) {
         this.store = store;
         this.audit = audit;
+        this.events = events;
         this.tx = tx;
     }
 
@@ -91,6 +97,15 @@ public class AlertCommandService {
                                     action,
                                     current.status(),
                                     updated.status());
+                            // and every operator's console is told, once the transaction commits
+                            events.publish(
+                                    List.of(
+                                            new AlertEvent(
+                                                    action.name(),
+                                                    Long.toString(updated.id()),
+                                                    updated.status().name(),
+                                                    updated.assetId(),
+                                                    updated.zoneId())));
                             yield updated;
                         }
                         case Decision.Refuse refuse -> throw refusal(refuse);

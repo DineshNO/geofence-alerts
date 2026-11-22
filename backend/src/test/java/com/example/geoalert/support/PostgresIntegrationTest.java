@@ -59,6 +59,24 @@ public abstract class PostgresIntegrationTest {
                 .formatted(username, role, TEST_PASSWORD);
     }
 
+    /**
+     * Command-line arguments for a second backend instance against the same database, as when two
+     * instances run behind the load balancer. It listens on a free port.
+     */
+    protected static String[] instanceArgs(String instanceName) {
+        return new String[] {
+            "--server.port=0",
+            "--app.instance-name=" + instanceName,
+            "--spring.datasource.url=" + POSTGRES.getJdbcUrl(),
+            "--spring.datasource.username=" + POSTGRES.getUsername(),
+            "--spring.datasource.password=" + POSTGRES.getPassword(),
+            "--app.security.jwt-secret=test-only-signing-secret-0123456789abcdef",
+            "--app.users.file=" + USERS_FILE,
+            "--app.ingest.retry-base-delay=1ms",
+            "--app.stream.heartbeat=200ms"
+        };
+    }
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
@@ -67,5 +85,6 @@ public abstract class PostgresIntegrationTest {
         registry.add("app.security.jwt-secret", () -> "test-only-signing-secret-0123456789abcdef");
         registry.add("app.users.file", () -> USERS_FILE.toString());
         registry.add("app.ingest.retry-base-delay", () -> "1ms"); // keep retry tests quick
+        registry.add("app.stream.heartbeat", () -> "200ms"); // keep stream tests quick
     }
 }

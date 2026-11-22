@@ -4,6 +4,8 @@ import com.example.geoalert.alerts.domain.AlertStore;
 import com.example.geoalert.alerts.domain.AuditLog;
 import com.example.geoalert.alerts.domain.NewAlert;
 import com.example.geoalert.positions.domain.PositionRule.ZoneEntry;
+import com.example.geoalert.stream.domain.AlertEvent;
+import com.example.geoalert.stream.domain.AlertEventBus;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +18,12 @@ public class AlertOpening {
 
     private final AlertStore store;
     private final AuditLog audit;
+    private final AlertEventBus events;
 
-    public AlertOpening(AlertStore store, AuditLog audit) {
+    public AlertOpening(AlertStore store, AuditLog audit, AlertEventBus events) {
         this.store = store;
         this.audit = audit;
+        this.events = events;
     }
 
     /** Returns the alerts that were really created (an active alert for the pair is skipped). */
@@ -37,6 +41,18 @@ public class AlertOpening {
         List<AlertStore.Created> created = store.insertNew(due);
         // R5: the OPENED entry is written with the alert, in the same transaction
         audit.recordOpened(created.stream().map(AlertStore.Created::id).toList());
+        // the live event goes out with the commit, and never if the batch rolls back
+        events.publish(
+                created.stream()
+                        .map(
+                                c ->
+                                        new AlertEvent(
+                                                "OPENED",
+                                                Long.toString(c.id()),
+                                                "OPEN",
+                                                c.alert().assetId(),
+                                                c.alert().zoneId()))
+                        .toList());
         return created;
     }
 }

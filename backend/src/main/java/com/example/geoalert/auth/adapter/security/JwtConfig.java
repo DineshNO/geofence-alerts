@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +14,8 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
@@ -55,9 +57,12 @@ class JwtConfig {
                 NimbusJwtDecoder.withSecretKey(jwtSigningKey)
                         .macAlgorithm(MacAlgorithm.HS256)
                         .build();
-        // the default checks (expiry, not-before) plus the issuer
+        // expiry and not-before with a clock tolerance of one second (Spring's default is 60
+        // seconds, so an expired token would still be accepted for a minute), plus the issuer
         decoder.setJwtValidator(
-                new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(ISSUER)));
+                new DelegatingOAuth2TokenValidator<>(
+                        new JwtTimestampValidator(Duration.ofSeconds(1)),
+                        new JwtIssuerValidator(ISSUER)));
         return decoder;
     }
 
