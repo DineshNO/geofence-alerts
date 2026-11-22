@@ -1,0 +1,24 @@
+# secrets: users files, environment files, keys (never commit these)
+seed-users*.json
+users*.json
+!deploy/config/users.example.json
+.env
+.env.*
+*.pem
+*.key
+
+# build output
+target/
+build/
+node_modules/
+dist/
+deploy/bundle/
+
+# IDE and OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+*.pdf
+*.zip
