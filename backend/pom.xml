@@ -15,7 +15,7 @@
 
     <groupId>com.example.geoalert</groupId>
     <artifactId>geofence-alerts-backend</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <name>geofence-alerts-backend</name>
     <description>Geofence alerting service: ingest, alert rules and operator workflow</description>
 
